@@ -5,10 +5,13 @@ docker build -t appfactory-pg:10.9 .
 ./runWithVolume.sh docker ~/docker/config/env-vars.txt
 
 # run script with password and env-file : newpsq volume
-./runWithVolume.sh docker ~/docker/config/env-vars.txt
+./runNoVolume.sh docker ~/docker/config/env-vars.txt
 
 # run psql connecting with on port 5433
 psql -h localhost -p 5433 -U postgres
 
 # run bash in an existing container
 docker exec -it pg-docker /bin/bash
+
+# view logs
+docker container logs -f pg-docker
