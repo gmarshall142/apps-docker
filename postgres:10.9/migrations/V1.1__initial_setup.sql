@@ -28,6 +28,113 @@ CREATE TYPE metadata.field_composite AS (
 ALTER TYPE metadata.field_composite OWNER TO appowner;
 
 --
+-- Name: attachmentaddlink(text, integer, integer); Type: FUNCTION; Schema: app; Owner: appowner
+--
+
+CREATE FUNCTION app.attachmentaddlink(uname text, idapptable integer, idtablerecord integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+
+  DECLARE
+    attachmentId integer;
+    execStr text;
+    newRecordId integer;
+
+  BEGIN
+
+    -- get attachment
+    SELECT attach.id INTO attachmentId FROM app.attachments as attach WHERE attach.uniquename = uName;
+    RAISE NOTICE 'attachmentId: %' , attachmentId;
+
+    -- attachments record
+    execStr := 'INSERT INTO app.tableattachments (id, apptableid, recordid, attachmentid, createdat, updatedat) VALUES ' ||
+            '(DEFAULT, ' || idapptable || ', ' || idtablerecord || ', ' || attachmentId || ', now(), now()) ' ||
+            'RETURNING app.tableattachments.id;';
+    EXECUTE execStr INTO newRecordId;
+
+    RAISE NOTICE '***** insert complete';
+
+    RETURN newRecordId;
+  END;
+$$;
+
+
+ALTER FUNCTION app.attachmentaddlink(uname text, idapptable integer, idtablerecord integer) OWNER TO appowner;
+
+--
+-- Name: attachmentaddupload(integer, text, text, text, integer); Type: FUNCTION; Schema: app; Owner: appowner
+--
+
+CREATE FUNCTION app.attachmentaddupload(iduser integer, path text, uniquename text, name text, size integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+
+  DECLARE
+    recordId integer;
+    execStr text;
+
+  BEGIN
+
+    RAISE NOTICE 'userid: %' , iduser;
+    -- attachments record
+    execStr := 'INSERT INTO app.attachments (id, path, uniquename, name, size, createdat, updatedat) VALUES ' ||
+               '(DEFAULT, ''' || path || ''', ''' || uniqueName || ''', ''' || name || ''', ' ||
+               size || ', now(), now()) RETURNING app.attachments.id;';
+    RAISE NOTICE 'execStr: %', execStr;
+    EXECUTE execStr INTO recordId;
+
+    -- user attachment
+    EXECUTE 'INSERT INTO app.userattachments (id, userid, attachmentid, createdat, updatedat) VALUES ' ||
+            '(DEFAULT, ' || iduser || ', ' || recordId || ', now(), now());';
+
+
+    RETURN recordId;
+  END;
+$$;
+
+
+ALTER FUNCTION app.attachmentaddupload(iduser integer, path text, uniquename text, name text, size integer) OWNER TO appowner;
+
+--
+-- Name: attachmentupdate(integer, text, text, integer, integer); Type: FUNCTION; Schema: app; Owner: appowner
+--
+
+CREATE FUNCTION app.attachmentupdate(iduser integer, uniquename text, location text, idapptable integer, idtablerecord integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+
+  DECLARE
+    recordId integer;
+    execStr text;
+
+  BEGIN
+
+    RAISE NOTICE 'userid: %' , iduser;
+
+    -- update attachment location
+    execStr := 'UPDATE app.attachments SET path = ''' || location ||
+        ''' WHERE uniquename = ''' || uniqueName || ''' RETURNING app.attachments.id;';
+    EXECUTE execStr INTO recordId;
+    RAISE NOTICE 'recordId: %' , recordId;
+
+    -- remove user attachment
+    EXECUTE 'DELETE FROM app.userattachments WHERE userid = ' || iduser || ' AND attachmentid = ' || recordId || ';';
+
+    -- attachments record
+    -- user attachment
+    EXECUTE 'INSERT INTO app.tableattachments (id, apptableid, recordid, attachmentid, createdat, updatedat) VALUES ' ||
+            '(DEFAULT, ' || idapptable || ', ' || idtablerecord || ', ' || recordId || ', now(), now());';
+
+    RAISE NOTICE '***** update complete';
+
+    RETURN recordId;
+  END;
+$$;
+
+
+ALTER FUNCTION app.attachmentupdate(iduser integer, uniquename text, location text, idapptable integer, idtablerecord integer) OWNER TO appowner;
+
+--
 -- Name: findbunos(jsonb); Type: FUNCTION; Schema: app; Owner: appowner
 --
 
@@ -1520,6 +1627,7 @@ CREATE FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer) RETUR
     OPEN cur_fields(tableId);
 
     execStr := 'SELECT * from metadata.getColumnElementsFromRecord(''' || cur_fields || ''', ' || idrec || ', true);';
+
     EXECUTE execStr INTO resp;
 
     CLOSE cur_fields;
@@ -1537,6 +1645,11 @@ CREATE FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer) RETUR
     RAISE NOTICE '%', execStr;
 
     EXECUTE 'SELECT row_to_json(t) FROM ( ' || execStr || ' ) t;' INTO result;
+
+    RAISE NOTICE '========================';
+    RAISE NOTICE '%', result;
+    RAISE NOTICE '========================';
+
     RETURN result;
   END;
 $$;
@@ -1731,7 +1844,10 @@ CREATE FUNCTION metadata.getcolumnelementsfromfielddata(ref refcursor, fieldids 
             ELSE
               quotes := '';
             END IF;
-            IF (rec_field.datatype = 'integer[]') THEN
+            RAISE NOTICE '-----------------------------';
+            RAISE NOTICE 'fieldvals[%]: %  jsonfield: %', idx, fieldvals[idx], rec_field.jsonfield;
+            RAISE NOTICE '-----------------------------';
+            IF (rec_field.datatype = 'integer[]' AND rec_field.jsonfield = false) THEN
               -- change the array string
               fieldVal := replace(replace(fieldvals[idx], '[', '{'), ']', '}');
             ELSE
@@ -2606,6 +2722,32 @@ $$;
 ALTER FUNCTION metadata.pageformsgetactionsbypage(idpage numeric) OWNER TO appowner;
 
 --
+-- Name: pageformsgetformtable(integer); Type: FUNCTION; Schema: metadata; Owner: appowner
+--
+
+CREATE FUNCTION metadata.pageformsgetformtable(idform integer) RETURNS TABLE(id integer, appid integer, label character varying, tablename character varying, description character varying, createdat timestamp without time zone, updatedat timestamp without time zone)
+    LANGUAGE plpgsql
+    AS $$
+
+  BEGIN
+    RETURN QUERY
+    select
+      tbl.id,
+      tbl.appid,
+      tbl.label,
+      tbl.tablename,
+      tbl.description,
+      tbl.createdat,
+      tbl.updatedat
+    from metadata.pageforms pf, metadata.appcolumns col, metadata.apptables tbl
+    where pf.id = idform and col.id = pf.appcolumnid and tbl.id = col.apptableid;
+  END;
+$$;
+
+
+ALTER FUNCTION metadata.pageformsgetformtable(idform integer) OWNER TO appowner;
+
+--
 -- Name: pageformsupdate(numeric, numeric, text, jsonb); Type: FUNCTION; Schema: metadata; Owner: appowner
 --
 
@@ -3024,6 +3166,83 @@ ALTER SEQUENCE app.appdata_id_seq OWNED BY app.appdata.id;
 
 
 --
+-- Name: tableattachments; Type: TABLE; Schema: app; Owner: appowner
+--
+
+CREATE TABLE app.tableattachments (
+    createdat timestamp without time zone,
+    updatedat timestamp without time zone DEFAULT now(),
+    id integer NOT NULL,
+    attachmentid integer NOT NULL,
+    apptableid integer NOT NULL,
+    recordid integer NOT NULL
+);
+
+
+ALTER TABLE app.tableattachments OWNER TO appowner;
+
+--
+-- Name: appdataattachments_id_seq; Type: SEQUENCE; Schema: app; Owner: appowner
+--
+
+CREATE SEQUENCE app.appdataattachments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE app.appdataattachments_id_seq OWNER TO appowner;
+
+--
+-- Name: appdataattachments_id_seq; Type: SEQUENCE OWNED BY; Schema: app; Owner: appowner
+--
+
+ALTER SEQUENCE app.appdataattachments_id_seq OWNED BY app.tableattachments.id;
+
+
+--
+-- Name: attachments; Type: TABLE; Schema: app; Owner: appowner
+--
+
+CREATE TABLE app.attachments (
+    id integer NOT NULL,
+    path character varying(2000),
+    uniquename character varying(128),
+    name character varying(128),
+    size integer,
+    createdat timestamp without time zone,
+    updatedat timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE app.attachments OWNER TO appowner;
+
+--
+-- Name: attachments_id_seq; Type: SEQUENCE; Schema: app; Owner: appowner
+--
+
+CREATE SEQUENCE app.attachments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE app.attachments_id_seq OWNER TO appowner;
+
+--
+-- Name: attachments_id_seq; Type: SEQUENCE OWNED BY; Schema: app; Owner: appowner
+--
+
+ALTER SEQUENCE app.attachments_id_seq OWNED BY app.attachments.id;
+
+
+--
 -- Name: bunos; Type: TABLE; Schema: app; Owner: appowner
 --
 
@@ -3095,6 +3314,43 @@ ALTER TABLE app.groups_id_seq OWNER TO appowner;
 --
 
 ALTER SEQUENCE app.groups_id_seq OWNED BY app.groups.id;
+
+
+--
+-- Name: issueattachments; Type: TABLE; Schema: app; Owner: appowner
+--
+
+CREATE TABLE app.issueattachments (
+    id integer NOT NULL,
+    issueid integer NOT NULL,
+    attachmentid integer NOT NULL,
+    createdat timestamp without time zone,
+    updatedat timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE app.issueattachments OWNER TO appowner;
+
+--
+-- Name: issueattachments_id_seq; Type: SEQUENCE; Schema: app; Owner: appowner
+--
+
+CREATE SEQUENCE app.issueattachments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE app.issueattachments_id_seq OWNER TO appowner;
+
+--
+-- Name: issueattachments_id_seq; Type: SEQUENCE OWNED BY; Schema: app; Owner: appowner
+--
+
+ALTER SEQUENCE app.issueattachments_id_seq OWNED BY app.issueattachments.id;
 
 
 --
@@ -3487,6 +3743,43 @@ ALTER TABLE app.status_id_seq OWNER TO appowner;
 --
 
 ALTER SEQUENCE app.status_id_seq OWNED BY app.status.id;
+
+
+--
+-- Name: userattachments; Type: TABLE; Schema: app; Owner: appowner
+--
+
+CREATE TABLE app.userattachments (
+    id integer NOT NULL,
+    userid integer NOT NULL,
+    attachmentid integer NOT NULL,
+    createdat timestamp without time zone,
+    updatedat timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE app.userattachments OWNER TO appowner;
+
+--
+-- Name: userattachments_id_seq; Type: SEQUENCE; Schema: app; Owner: appowner
+--
+
+CREATE SEQUENCE app.userattachments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE app.userattachments_id_seq OWNER TO appowner;
+
+--
+-- Name: userattachments_id_seq; Type: SEQUENCE OWNED BY; Schema: app; Owner: appowner
+--
+
+ALTER SEQUENCE app.userattachments_id_seq OWNED BY app.userattachments.id;
 
 
 --
@@ -4609,6 +4902,13 @@ ALTER TABLE ONLY app.appdata ALTER COLUMN id SET DEFAULT nextval('app.appdata_id
 
 
 --
+-- Name: attachments id; Type: DEFAULT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.attachments ALTER COLUMN id SET DEFAULT nextval('app.attachments_id_seq'::regclass);
+
+
+--
 -- Name: bunos id; Type: DEFAULT; Schema: app; Owner: appowner
 --
 
@@ -4620,6 +4920,13 @@ ALTER TABLE ONLY app.bunos ALTER COLUMN id SET DEFAULT nextval('app.bunos_id_seq
 --
 
 ALTER TABLE ONLY app.groups ALTER COLUMN id SET DEFAULT nextval('app.groups_id_seq'::regclass);
+
+
+--
+-- Name: issueattachments id; Type: DEFAULT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.issueattachments ALTER COLUMN id SET DEFAULT nextval('app.issueattachments_id_seq'::regclass);
 
 
 --
@@ -4690,6 +4997,20 @@ ALTER TABLE ONLY app.roles ALTER COLUMN id SET DEFAULT nextval('app.roles_id_seq
 --
 
 ALTER TABLE ONLY app.status ALTER COLUMN id SET DEFAULT nextval('app.status_id_seq'::regclass);
+
+
+--
+-- Name: tableattachments id; Type: DEFAULT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.tableattachments ALTER COLUMN id SET DEFAULT nextval('app.appdataattachments_id_seq'::regclass);
+
+
+--
+-- Name: userattachments id; Type: DEFAULT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.userattachments ALTER COLUMN id SET DEFAULT nextval('app.userattachments_id_seq'::regclass);
 
 
 --
@@ -4882,6 +5203,16 @@ COPY app.appbunos (id, appid, bunoid, createdat, updatedat) FROM stdin;
 --
 
 COPY app.appdata (id, jsondata, createdat, updatedat, apptableid, appid) FROM stdin;
+\.
+
+
+--
+-- Data for Name: attachments; Type: TABLE DATA; Schema: app; Owner: appowner
+--
+
+COPY app.attachments (id, path, uniquename, name, size, createdat, updatedat) FROM stdin;
+87	/uploads	298e92e0-a3d2-11e9-9dcc-118d0ca75611_history.xls	history.xls	3581	2019-07-11 11:51:04.723059	2019-07-11 11:51:04.723059
+88	/uploads	451403b0-a3d2-11e9-9dcc-118d0ca75611_105 dasher tree in driveway.jpg	105 dasher tree in driveway.jpg	5568540	2019-07-11 11:51:50.933175	2019-07-11 11:51:50.933175
 \.
 
 
@@ -5326,6 +5657,14 @@ COPY app.groups (id, name, description, createdat, updatedat) FROM stdin;
 
 
 --
+-- Data for Name: issueattachments; Type: TABLE DATA; Schema: app; Owner: appowner
+--
+
+COPY app.issueattachments (id, issueid, attachmentid, createdat, updatedat) FROM stdin;
+\.
+
+
+--
 -- Data for Name: issues; Type: TABLE DATA; Schema: app; Owner: appowner
 --
 
@@ -5405,6 +5744,24 @@ COPY app.roles (id, name, description, appid, createdat, updatedat, jsondata) FR
 --
 
 COPY app.status (id, appid, label, description, createdat, updatedat, jsondata) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tableattachments; Type: TABLE DATA; Schema: app; Owner: appowner
+--
+
+COPY app.tableattachments (createdat, updatedat, id, attachmentid, apptableid, recordid) FROM stdin;
+\.
+
+
+--
+-- Data for Name: userattachments; Type: TABLE DATA; Schema: app; Owner: appowner
+--
+
+COPY app.userattachments (id, userid, attachmentid, createdat, updatedat) FROM stdin;
+81	3575	87	2019-07-11 11:51:04.723059	2019-07-11 11:51:04.723059
+82	3575	88	2019-07-11 11:51:50.933175	2019-07-11 11:51:50.933175
 \.
 
 
@@ -6801,8 +7158,8 @@ COPY metadata.menupaths (syspath, sysname, shortname, id) FROM stdin;
 COPY metadata.pageforms (id, pageid, jsondata, createdat, updatedat, systemcategoryid, appcolumnid, description) FROM stdin;
 18	1	{"components": [{"id": "emrhfm", "key": "textField", "mask": false, "type": "textfield", "input": true, "label": "Text Field", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "customDefaultValue": ""}, {"id": "eah2di8", "key": "submit", "size": "md", "type": "button", "block": false, "input": true, "label": "Submit", "theme": "primary", "action": "submit", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "leftIcon": "", "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "rightIcon": "", "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": true, "labelPosition": "top", "calculateValue": "", "disableOnInvalid": true, "customDefaultValue": ""}]}	2018-08-09 20:06:36.487981	2018-08-09 20:06:36.487981	\N	\N	\N
 29	1	{"components": [{"id": "e1uiyjn", "key": "htmlelement", "tag": "p", "mask": false, "type": "htmlelement", "attrs": [{"attr": "", "value": ""}], "input": false, "label": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "content": "Simple Page <br/>\\n<br/>\\nWith Custom Component", "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "className": "", "hideLabel": false, "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "refreshOnChange": false, "customDefaultValue": ""}, {"id": "euxhscr", "key": "myBtn", "mask": false, "size": "lg", "type": "customcomponent", "block": false, "input": true, "label": "My Custom Component", "theme": "warning", "action": "submit", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "leftIcon": "", "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "rightIcon": "", "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": true, "labelPosition": "top", "calculateValue": "", "disableOnInvalid": false, "customDefaultValue": ""}, {"id": "e6xcskc", "key": "submit", "size": "md", "type": "button", "block": false, "input": true, "label": "Submit", "theme": "primary", "action": "submit", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "leftIcon": "", "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "rightIcon": "", "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": true, "labelPosition": "top", "calculateValue": "", "disableOnInvalid": true, "customDefaultValue": ""}]}	2018-08-17 15:47:42.089989	2018-08-17 15:47:42.089989	\N	\N	\N
-32	30	{"components": [{"id": "ehme4q", "key": "htmlelement", "tag": "h3", "mask": false, "type": "htmlelement", "attrs": [{"attr": "style", "value": "color: blue"}], "input": false, "label": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "content": "Email", "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "className": "", "hideLabel": false, "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "refreshOnChange": false, "customDefaultValue": ""}, {"id": "eca7myt", "key": "panel", "type": "panel", "input": false, "label": "Panel", "theme": "default", "title": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "tableView": false, "breadcrumb": "default", "components": [{"id": "e4p9vwh", "key": "yourEmailAddress", "mask": false, "type": "textfield", "input": true, "label": "Your Email Address", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "allowMultipleMasks": false, "customDefaultValue": ""}, {"id": "enlqw1o", "key": "subject", "mask": false, "type": "textfield", "input": true, "label": "Subject", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "allowMultipleMasks": false, "customDefaultValue": ""}, {"id": "e71s85", "key": "message", "mask": false, "rows": 3, "type": "textarea", "input": true, "label": "Message", "editor": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "wysiwyg": false, "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "customDefaultValue": ""}], "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": false, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "customDefaultValue": ""}, {"id": "e6eby0t", "key": "htmlelement2", "tag": "br", "mask": false, "type": "htmlelement", "attrs": [{"attr": "", "value": ""}], "input": false, "label": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "content": "", "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "className": "", "hideLabel": false, "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "refreshOnChange": false, "customDefaultValue": ""}, {"id": "erpu7es", "key": "submit", "size": "md", "type": "button", "block": false, "input": true, "label": "Submit", "theme": "primary", "action": "submit", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "leftIcon": "", "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "rightIcon": "", "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": true, "labelPosition": "top", "calculateValue": "", "disableOnInvalid": true, "customDefaultValue": ""}]}	2018-08-17 19:31:42.934354	2018-08-17 19:31:42.934354	\N	\N	\N
-33	31	{"components": [{"id": "exhpj2q", "key": "subject", "mask": false, "type": "textfield", "input": true, "label": "Subject", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "allowMultipleMasks": false, "customDefaultValue": ""}, {"id": "etp18j", "key": "message", "mask": false, "rows": 10, "type": "textarea", "input": true, "label": "Submit Request Details Here:", "editor": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "wysiwyg": false, "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "customDefaultValue": ""}, {"id": "e67v8t", "dir": "", "key": "attachment", "url": "", "mask": false, "tags": [], "type": "file", "image": false, "input": true, "label": "Attachment:", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "storage": "url", "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"json": "", "custom": "", "unique": false, "required": false, "customMessage": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "imageSize": "200", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "properties": [{"key": "", "value": ""}], "uploadOnly": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "json": "", "show": null, "when": null}, "customClass": "", "description": "", "fileMaxSize": "1GB", "fileMinSize": "0KB", "filePattern": "*", "labelMargin": 3, "placeholder": "", "defaultValue": [], "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "customConditional": "", "customDefaultValue": ""}, {"id": "ezjdk2a", "key": "htmlelement2", "tag": "br", "mask": false, "type": "htmlelement", "attrs": [{"attr": "", "value": ""}], "input": false, "label": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "content": "", "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "className": "", "hideLabel": false, "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "refreshOnChange": false, "customDefaultValue": ""}, {"id": "ebg71pe", "key": "submit", "size": "md", "type": "button", "block": false, "input": true, "label": "Submit", "theme": "primary", "action": "submit", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "leftIcon": "", "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "rightIcon": "", "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": true, "labelPosition": "top", "calculateValue": "", "disableOnInvalid": true, "customDefaultValue": ""}]}	2018-08-17 19:35:30.174846	2018-08-17 19:35:30.174846	\N	\N	\N
+33	31	{"components": [{"id": "exhpj2q", "key": "subject", "mask": false, "type": "textfield", "input": true, "label": "Subject", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "allowMultipleMasks": false, "customDefaultValue": ""}, {"id": "etp18j", "key": "message", "mask": false, "rows": 10, "type": "textarea", "input": true, "label": "Submit Request Details Here:", "editor": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "wysiwyg": false, "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "customDefaultValue": ""}, {"id": "e67v8t", "dir": "", "key": "attachment", "url": "", "mask": false, "tags": [], "type": "file", "image": false, "input": true, "label": "Attachment:", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "storage": "url", "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"json": "", "custom": "", "unique": false, "required": false, "customMessage": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "imageSize": "200", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "properties": [{"key": "", "value": ""}], "uploadOnly": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "json": "", "show": null, "when": null}, "customClass": "", "description": "", "fileMaxSize": "1GB", "fileMinSize": "0KB", "filePattern": "*", "labelMargin": 3, "placeholder": "", "defaultValue": [], "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "customConditional": "", "customDefaultValue": ""}, {"id": "ezjdk2a", "key": "htmlelement2", "tag": "br", "mask": false, "type": "htmlelement", "attrs": [{"attr": "", "value": ""}], "input": false, "label": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "content": "", "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "className": "", "hideLabel": false, "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "refreshOnChange": false, "customDefaultValue": ""}, {"id": "ebg71pe", "key": "submit", "size": "md", "type": "button", "block": false, "input": true, "label": "Submit", "theme": "primary", "action": "submit", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "leftIcon": "", "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "rightIcon": "", "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": true, "labelPosition": "top", "calculateValue": "", "disableOnInvalid": true, "customDefaultValue": ""}]}	2018-08-17 19:35:30.174846	2018-08-17 19:35:30.174846	\N	\N	Admin website issues
+32	30	{"components": [{"id": "ehme4q", "key": "htmlelement", "tag": "h3", "mask": false, "type": "htmlelement", "attrs": [{"attr": "style", "value": "color: blue"}], "input": false, "label": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "content": "Email", "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "className": "", "hideLabel": false, "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "refreshOnChange": false, "customDefaultValue": ""}, {"id": "eca7myt", "key": "panel", "type": "panel", "input": false, "label": "Panel", "theme": "default", "title": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "tableView": false, "breadcrumb": "default", "components": [{"id": "e4p9vwh", "key": "yourEmailAddress", "mask": false, "type": "textfield", "input": true, "label": "Your Email Address", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "allowMultipleMasks": false, "customDefaultValue": ""}, {"id": "enlqw1o", "key": "subject", "mask": false, "type": "textfield", "input": true, "label": "Subject", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "allowMultipleMasks": false, "customDefaultValue": ""}, {"id": "e71s85", "key": "message", "mask": false, "rows": 3, "type": "textarea", "input": true, "label": "Message", "editor": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "wysiwyg": false, "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "pattern": "", "maxWords": "", "minWords": "", "required": false, "maxLength": "", "minLength": "", "customPrivate": false}, "autofocus": false, "hideLabel": false, "inputMask": "", "inputType": "text", "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": true, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "showCharCount": false, "showWordCount": false, "calculateValue": "", "customDefaultValue": ""}], "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": false, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "customDefaultValue": ""}, {"id": "e6eby0t", "key": "htmlelement2", "tag": "br", "mask": false, "type": "htmlelement", "attrs": [{"attr": "", "value": ""}], "input": false, "label": "", "hidden": false, "prefix": "", "suffix": "", "unique": false, "content": "", "dbIndex": false, "tooltip": "", "disabled": false, "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "className": "", "hideLabel": false, "protected": false, "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": false, "labelPosition": "top", "calculateValue": "", "refreshOnChange": false, "customDefaultValue": ""}, {"id": "erpu7es", "key": "submit", "size": "md", "type": "button", "block": false, "input": true, "label": "Submit", "theme": "primary", "action": "submit", "hidden": false, "prefix": "", "suffix": "", "unique": false, "dbIndex": false, "tooltip": "", "disabled": false, "leftIcon": "", "multiple": false, "tabindex": "", "validate": {"custom": "", "required": false, "customPrivate": false}, "autofocus": false, "hideLabel": false, "protected": false, "rightIcon": "", "tableView": true, "errorLabel": "", "labelWidth": 30, "persistent": false, "validateOn": "change", "clearOnHide": true, "conditional": {"eq": "", "show": null, "when": null}, "customClass": "", "description": "", "labelMargin": 3, "placeholder": "", "defaultValue": null, "dataGridLabel": true, "labelPosition": "top", "calculateValue": "", "disableOnInvalid": true, "customDefaultValue": ""}]}	2018-08-17 19:31:42.934354	2018-08-17 19:31:42.934354	\N	\N	Admin email administrators
 \.
 
 
@@ -6918,7 +7275,21 @@ SELECT pg_catalog.setval('app.appbunos_id_seq', 1078, true);
 -- Name: appdata_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdata_id_seq', 1200, true);
+SELECT pg_catalog.setval('app.appdata_id_seq', 1268, true);
+
+
+--
+-- Name: appdataattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
+--
+
+SELECT pg_catalog.setval('app.appdataattachments_id_seq', 23, true);
+
+
+--
+-- Name: attachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
+--
+
+SELECT pg_catalog.setval('app.attachments_id_seq', 90, true);
 
 
 --
@@ -6936,10 +7307,17 @@ SELECT pg_catalog.setval('app.groups_id_seq', 18, true);
 
 
 --
+-- Name: issueattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
+--
+
+SELECT pg_catalog.setval('app.issueattachments_id_seq', 1, false);
+
+
+--
 -- Name: issues_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.issues_id_seq', 357, true);
+SELECT pg_catalog.setval('app.issues_id_seq', 372, true);
 
 
 --
@@ -7006,6 +7384,13 @@ SELECT pg_catalog.setval('app.status_id_seq', 45, true);
 
 
 --
+-- Name: userattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
+--
+
+SELECT pg_catalog.setval('app.userattachments_id_seq', 84, true);
+
+
+--
 -- Name: usergroups_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
@@ -7065,7 +7450,7 @@ SELECT pg_catalog.setval('metadata.apiactions_id_seq', 4, true);
 -- Name: appcolumns_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 535, true);
+SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 538, true);
 
 
 --
@@ -7121,7 +7506,7 @@ SELECT pg_catalog.setval('metadata.fieldcategories_id_seq', 2, true);
 -- Name: formeventactions_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 221, true);
+SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 229, true);
 
 
 --
@@ -7256,6 +7641,14 @@ ALTER TABLE ONLY app.appdata
 
 
 --
+-- Name: attachments attachments_pkey; Type: CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.attachments
+    ADD CONSTRAINT attachments_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: bunos bunos_pk; Type: CONSTRAINT; Schema: app; Owner: appowner
 --
 
@@ -7269,6 +7662,14 @@ ALTER TABLE ONLY app.bunos
 
 ALTER TABLE ONLY app.groups
     ADD CONSTRAINT groups_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: issueattachments issueattachments_pkey; Type: CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.issueattachments
+    ADD CONSTRAINT issueattachments_pkey PRIMARY KEY (id);
 
 
 --
@@ -7357,6 +7758,22 @@ ALTER TABLE ONLY app.roles
 
 ALTER TABLE ONLY app.status
     ADD CONSTRAINT status_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tableattachments tableattachments_pk; Type: CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.tableattachments
+    ADD CONSTRAINT tableattachments_pk PRIMARY KEY (id);
+
+
+--
+-- Name: userattachments userattachments_pkey; Type: CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.userattachments
+    ADD CONSTRAINT userattachments_pkey PRIMARY KEY (id);
 
 
 --
@@ -7604,6 +8021,20 @@ CREATE UNIQUE INDEX appdata_id_uindex ON app.appdata USING btree (id);
 
 
 --
+-- Name: attachments_id_uindex; Type: INDEX; Schema: app; Owner: appowner
+--
+
+CREATE UNIQUE INDEX attachments_id_uindex ON app.attachments USING btree (id);
+
+
+--
+-- Name: attachments_uniquename_uindex; Type: INDEX; Schema: app; Owner: appowner
+--
+
+CREATE UNIQUE INDEX attachments_uniquename_uindex ON app.attachments USING btree (uniquename);
+
+
+--
 -- Name: bunos_id_uindex; Type: INDEX; Schema: app; Owner: appowner
 --
 
@@ -7622,6 +8053,13 @@ CREATE UNIQUE INDEX bunos_label_uindex ON app.bunos USING btree (identifier);
 --
 
 CREATE UNIQUE INDEX groups_id_uindex ON app.groups USING btree (id);
+
+
+--
+-- Name: issueattachments_id_uindex; Type: INDEX; Schema: app; Owner: appowner
+--
+
+CREATE UNIQUE INDEX issueattachments_id_uindex ON app.issueattachments USING btree (id);
 
 
 --
@@ -7692,6 +8130,20 @@ CREATE UNIQUE INDEX roles_id_uindex ON app.roles USING btree (id);
 --
 
 CREATE UNIQUE INDEX status_id_uindex ON app.status USING btree (id);
+
+
+--
+-- Name: tableattachments_id_uindex; Type: INDEX; Schema: app; Owner: appowner
+--
+
+CREATE UNIQUE INDEX tableattachments_id_uindex ON app.tableattachments USING btree (id);
+
+
+--
+-- Name: userattachments_id_uindex; Type: INDEX; Schema: app; Owner: appowner
+--
+
+CREATE UNIQUE INDEX userattachments_id_uindex ON app.userattachments USING btree (id);
 
 
 --
@@ -7926,6 +8378,22 @@ ALTER TABLE ONLY app.appdata
 
 
 --
+-- Name: issueattachments issueattachments_attachments_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.issueattachments
+    ADD CONSTRAINT issueattachments_attachments_id_fk FOREIGN KEY (attachmentid) REFERENCES app.attachments(id);
+
+
+--
+-- Name: issueattachments issueattachments_issues_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.issueattachments
+    ADD CONSTRAINT issueattachments_issues_id_fk FOREIGN KEY (issueid) REFERENCES app.issues(id);
+
+
+--
 -- Name: issues issues_activity_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
 --
 
@@ -8091,6 +8559,30 @@ ALTER TABLE ONLY app.roles
 
 ALTER TABLE ONLY app.status
     ADD CONSTRAINT status_applications_id_fk FOREIGN KEY (appid) REFERENCES metadata.applications(id);
+
+
+--
+-- Name: tableattachments tableattachments_attachments_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.tableattachments
+    ADD CONSTRAINT tableattachments_attachments_id_fk FOREIGN KEY (attachmentid) REFERENCES app.attachments(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: userattachments userattachments_attachments_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.userattachments
+    ADD CONSTRAINT userattachments_attachments_id_fk FOREIGN KEY (attachmentid) REFERENCES app.attachments(id);
+
+
+--
+-- Name: userattachments userattachments_users_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.userattachments
+    ADD CONSTRAINT userattachments_users_id_fk FOREIGN KEY (userid) REFERENCES app.users(id);
 
 
 --
@@ -8365,6 +8857,34 @@ GRANT ALL ON FUNCTION app.findrolesbystatetransition(idtable integer, idstatetra
 --
 
 GRANT ALL ON FUNCTION app.findtransitionnotificationusers(idtable integer, idstatetransition integer) TO appuser;
+
+
+--
+-- Name: FUNCTION getappusers(idapp integer); Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON FUNCTION app.getappusers(idapp integer) TO appuser;
+
+
+--
+-- Name: FUNCTION getuserroles(iduser integer); Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON FUNCTION app.getuserroles(iduser integer) TO appuser;
+
+
+--
+-- Name: FUNCTION getuserrolesasarray(iduser integer); Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON FUNCTION app.getuserrolesasarray(iduser integer) TO appuser;
+
+
+--
+-- Name: FUNCTION getusersinroles(roleids integer[]); Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON FUNCTION app.getusersinroles(roleids integer[]) TO appuser;
 
 
 --
@@ -8725,6 +9245,34 @@ GRANT ALL ON SEQUENCE app.appdata_id_seq TO appuser;
 
 
 --
+-- Name: TABLE tableattachments; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON TABLE app.tableattachments TO appuser;
+
+
+--
+-- Name: SEQUENCE appdataattachments_id_seq; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON SEQUENCE app.appdataattachments_id_seq TO appuser;
+
+
+--
+-- Name: TABLE attachments; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON TABLE app.attachments TO appuser;
+
+
+--
+-- Name: SEQUENCE attachments_id_seq; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON SEQUENCE app.attachments_id_seq TO appuser;
+
+
+--
 -- Name: TABLE bunos; Type: ACL; Schema: app; Owner: appowner
 --
 
@@ -8750,6 +9298,20 @@ GRANT ALL ON TABLE app.groups TO appuser;
 --
 
 GRANT ALL ON SEQUENCE app.groups_id_seq TO appuser;
+
+
+--
+-- Name: TABLE issueattachments; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON TABLE app.issueattachments TO appuser;
+
+
+--
+-- Name: SEQUENCE issueattachments_id_seq; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON SEQUENCE app.issueattachments_id_seq TO appuser;
 
 
 --
@@ -8813,6 +9375,13 @@ GRANT ALL ON SEQUENCE app.priority_id_seq TO appuser;
 --
 
 GRANT ALL ON TABLE app.reporttemplates TO appuser;
+
+
+--
+-- Name: SEQUENCE reporttemplates_id_seq; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON SEQUENCE app.reporttemplates_id_seq TO appuser;
 
 
 --
@@ -8883,6 +9452,20 @@ GRANT ALL ON TABLE app.status TO appuser;
 --
 
 GRANT ALL ON SEQUENCE app.status_id_seq TO appuser;
+
+
+--
+-- Name: TABLE userattachments; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON TABLE app.userattachments TO appuser;
+
+
+--
+-- Name: SEQUENCE userattachments_id_seq; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT ALL ON SEQUENCE app.userattachments_id_seq TO appuser;
 
 
 --

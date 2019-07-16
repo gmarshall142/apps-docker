@@ -1,0 +1,15 @@
+# build application docker app
+cd application
+docker build -t load-balanced-app .
+
+# run both apps
+docker container run --rm -e "MESSAGE=First Instance" -p 8081:8080 -d --name app1 load-balanced-app
+docker container run --rm -e "MESSAGE=Second Instance" -p 8082:8080 -d --name app2 load-balanced-app
+
+# get container IP
+docker inspect -f '{{ .NetworkSettings.IPAddress }}' app1
+
+# build nginx docker container
+docker build -t load-balance-nginx .
+# run nginx container
+docker run --rm -p 8080:80 -d --name nginx load-balance-nginx
