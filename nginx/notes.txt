@@ -13,3 +13,7 @@ docker inspect -f '{{ .NetworkSettings.IPAddress }}' app1
 docker build -t load-balance-nginx .
 # run nginx container
 docker run --rm -p 8080:80 -d --name nginx load-balance-nginx
+
+NOTE:
+This works well in Firefox but not in Chrome
+

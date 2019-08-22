@@ -1,0 +1,9 @@
+# build
+docker build -t centos-node .
+
+# run and test for node version
+docker container run centos-node node --version
+
+# sh into docker-compose container
+docker-compose exec web sh
+
