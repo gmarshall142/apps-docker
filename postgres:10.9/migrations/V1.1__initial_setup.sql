@@ -353,10 +353,10 @@ $$;
 ALTER FUNCTION app.getappusers(idapp integer) OWNER TO appowner;
 
 --
--- Name: getcolumnvalues(integer); Type: FUNCTION; Schema: app; Owner: appowner
+-- Name: getcolumnvalues(integer, integer); Type: FUNCTION; Schema: app; Owner: appowner
 --
 
-CREATE FUNCTION app.getcolumnvalues(idcolumn integer) RETURNS json
+CREATE FUNCTION app.getcolumnvalues(idcolumn integer, iduser integer DEFAULT NULL::integer) RETURNS json
     LANGUAGE plpgsql
     AS $$
 
@@ -374,13 +374,22 @@ CREATE FUNCTION app.getcolumnvalues(idcolumn integer) RETURNS json
     fromStr TEXT;
     whereStr TEXT;
     whereStr2 TEXT;
+	  userRoles integer[] := metadata.getUserRolesArray(iduser);
 
   BEGIN
-    CREATE TEMP TABLE lookup(tablename VARCHAR);
+--     CREATE TEMP TABLE lookup(tablename VARCHAR);
 
     SELECT id, apptableid, columnname, label, datatypeid, length, jsonfield, createdat, updatedat, mastertable,
-           mastercolumn, name, regexp_replace(masterdisplay, '''', '''''', 'g') as masterdisplay, displayorder, active
+           mastercolumn, name, regexp_replace(masterdisplay, '''', '''''', 'g') as masterdisplay,
+           displayorder, active, allowedroles
            INTO rec FROM metadata.appcolumns WHERE id = idcolumn;
+
+    RAISE NOTICE 'userRoles: %', userRoles;
+    RAISE NOTICE 'allowedroles: %  intersection: %', rec.allowedroles, (rec.allowedroles && userRoles);
+    IF(rec.allowedroles is not null AND rec.allowedroles <> '{}' AND (rec.allowedroles && userRoles) = false) THEN
+      RETURN '[]';
+    END IF;
+
     SELECT * INTO tbl FROM metadata.apptables tbl WHERE id = rec.apptableid;
     tableName := tbl.tablename;
     RAISE NOTICE 'tableName: %', tableName;
@@ -416,7 +425,7 @@ CREATE FUNCTION app.getcolumnvalues(idcolumn integer) RETURNS json
     RAISE NOTICE 'relationColName: %', relationColName;
     RAISE NOTICE '======================================';
 
-    DROP TABLE lookup;
+--     DROP TABLE lookup;
 
     IF (rec.masterTable IS NOT NULL) THEN
       selectStr := relationColName || ' as value, ' || regexp_replace(selectStr, colLabel, ' as name', 'g');
@@ -452,7 +461,7 @@ CREATE FUNCTION app.getcolumnvalues(idcolumn integer) RETURNS json
 $$;
 
 
-ALTER FUNCTION app.getcolumnvalues(idcolumn integer) OWNER TO appowner;
+ALTER FUNCTION app.getcolumnvalues(idcolumn integer, iduser integer) OWNER TO appowner;
 
 --
 -- Name: getqueryparamsforcolumn(json, boolean); Type: FUNCTION; Schema: app; Owner: appowner
@@ -1230,10 +1239,10 @@ $$;
 ALTER FUNCTION metadata.appdatadelete(idtable integer, idrec integer) OWNER TO appowner;
 
 --
--- Name: appdatafindall(numeric); Type: FUNCTION; Schema: metadata; Owner: appowner
+-- Name: appdatafindall(numeric, integer); Type: FUNCTION; Schema: metadata; Owner: appowner
 --
 
-CREATE FUNCTION metadata.appdatafindall(idtable numeric) RETURNS json
+CREATE FUNCTION metadata.appdatafindall(idtable numeric, iduser integer DEFAULT NULL::integer) RETURNS json
     LANGUAGE plpgsql
     AS $$
 
@@ -1249,7 +1258,7 @@ CREATE FUNCTION metadata.appdatafindall(idtable numeric) RETURNS json
     idx INTEGER;
 
     cur_fields CURSOR(id INTEGER)
-    FOR SELECT * FROM metadata.appformGetFields(id);
+    FOR SELECT * FROM metadata.appformGetFields(id, iduser);
 
 	BEGIN
     OPEN cur_fields(idtable);
@@ -1297,7 +1306,7 @@ CREATE FUNCTION metadata.appdatafindall(idtable numeric) RETURNS json
 $$;
 
 
-ALTER FUNCTION metadata.appdatafindall(idtable numeric) OWNER TO appowner;
+ALTER FUNCTION metadata.appdatafindall(idtable numeric, iduser integer) OWNER TO appowner;
 
 --
 -- Name: appdatafindbyid(integer, integer); Type: FUNCTION; Schema: metadata; Owner: appowner
@@ -1472,10 +1481,10 @@ $$;
 ALTER FUNCTION metadata.appformfindbyid(idrec numeric) OWNER TO appowner;
 
 --
--- Name: appformgetdatatable(numeric); Type: FUNCTION; Schema: metadata; Owner: appowner
+-- Name: appformgetdatatable(numeric, integer); Type: FUNCTION; Schema: metadata; Owner: appowner
 --
 
-CREATE FUNCTION metadata.appformgetdatatable(idtable numeric) RETURNS json
+CREATE FUNCTION metadata.appformgetdatatable(idtable numeric, iduser integer DEFAULT NULL::integer) RETURNS json
     LANGUAGE plpgsql
     AS $$
 
@@ -1484,33 +1493,46 @@ CREATE FUNCTION metadata.appformgetdatatable(idtable numeric) RETURNS json
     headerResult JSON;
     execStr TEXT;
     headerStr TEXT;
+    userArrayStr TEXT;
+    userIdStr TEXT := '';
+	  userRoles integer[] := metadata.getUserRolesArray(iduser);
 
 	BEGIN
+    userArrayStr := '''{' || array_to_string(userRoles, ',') || '}''';
+
     headerStr :=
     'select col.label as text, col.columnname as value, col.displayorder, dt.name as datatype
     from metadata.appcolumns as col
     left outer join metadata.datatypes as dt on dt.id = col.datatypeid
     where apptableid = ' || idtable || '
+    and (col.allowedroles is null OR col.allowedroles = ''{}'' OR col.allowedroles && ' || userArrayStr || ')
     order by displayorder';
-    RAISE NOTICE 'headerStr: %', headerStr;
+--     RAISE NOTICE 'headerStr: %', headerStr;
     EXECUTE 'SELECT array_to_json(array_agg(row_to_json(t))) FROM (' || headerStr || ') t;' INTO headerResult;
 
-    execStr := 'SELECT * from metadata.appdataFindAll(' || idtable || ');';
+    IF(iduser is not null) THEN
+      userIdStr := ', ' || iduser;
+    END IF;
+
+    execStr := 'SELECT * from metadata.appdataFindAll(' || idtable || userIdStr || ');';
     EXECUTE execStr INTO result;
 		RETURN json_build_object('data', result, 'headers', headerResult);
 	END;
 $$;
 
 
-ALTER FUNCTION metadata.appformgetdatatable(idtable numeric) OWNER TO appowner;
+ALTER FUNCTION metadata.appformgetdatatable(idtable numeric, iduser integer) OWNER TO appowner;
 
 --
--- Name: appformgetfields(numeric); Type: FUNCTION; Schema: metadata; Owner: appowner
+-- Name: appformgetfields(numeric, integer); Type: FUNCTION; Schema: metadata; Owner: appowner
 --
 
-CREATE FUNCTION metadata.appformgetfields(idtable numeric) RETURNS TABLE(apptableid integer, tablename character varying, appid integer, appcolumnid integer, columnname character varying, length integer, jsonfield boolean, name character varying, mastertable character varying, mastercolumn character varying, masterdisplay character varying, datatype character varying)
+CREATE FUNCTION metadata.appformgetfields(idtable numeric, iduser integer DEFAULT NULL::integer) RETURNS TABLE(apptableid integer, tablename character varying, appid integer, appcolumnid integer, columnname character varying, length integer, jsonfield boolean, name character varying, mastertable character varying, mastercolumn character varying, masterdisplay character varying, datatype character varying)
     LANGUAGE plpgsql
     AS $$
+
+  DECLARE
+    userRoles integer[] := metadata.getUserRolesArray(iduser);
 
 	BEGIN
     RETURN QUERY
@@ -1531,18 +1553,16 @@ CREATE FUNCTION metadata.appformgetfields(idtable numeric) RETURNS TABLE(apptabl
       metadata.apptables as tbl,
       metadata.datatypes  as dt,
       metadata.appcolumns as col
-     WHERE
-      tbl.id = idtable
-    AND
-      col.apptableid = tbl.id
-    AND
-      dt.id = col.datatypeid
+    WHERE tbl.id = idtable
+    AND col.apptableid = tbl.id
+    AND dt.id = col.datatypeid
+    AND (col.allowedroles is null OR col.allowedroles = '{}' OR col.allowedroles && userRoles)
     ORDER BY appcolumnid;
 	END;
 $$;
 
 
-ALTER FUNCTION metadata.appformgetfields(idtable numeric) OWNER TO appowner;
+ALTER FUNCTION metadata.appformgetfields(idtable numeric, iduser integer) OWNER TO appowner;
 
 --
 -- Name: appformgetformtables(); Type: FUNCTION; Schema: metadata; Owner: appowner
@@ -1714,16 +1734,15 @@ $$;
 ALTER FUNCTION metadata.datamapgettableoptions(idapp numeric) OWNER TO appowner;
 
 --
--- Name: fetchdatamodel(numeric); Type: FUNCTION; Schema: metadata; Owner: appowner
+-- Name: fetchdatamodel(numeric, integer); Type: FUNCTION; Schema: metadata; Owner: appowner
 --
 
-CREATE FUNCTION metadata.fetchdatamodel(idapp numeric) RETURNS TABLE(id integer, appid integer, label character varying, tablename character varying, description character varying, createdat timestamp without time zone, updatedat timestamp without time zone, appcolumns json)
+CREATE FUNCTION metadata.fetchdatamodel(idapp numeric, iduser integer DEFAULT NULL::integer) RETURNS TABLE(id integer, appid integer, label character varying, tablename character varying, description character varying, createdat timestamp without time zone, updatedat timestamp without time zone, appcolumns json)
     LANGUAGE plpgsql
     AS $$
 
   DECLARE
-    result JSON;
-    execStr TEXT;
+	  userRoles integer[] := metadata.getUserRolesArray(iduser);
 
   BEGIN
 		RETURN QUERY
@@ -1765,7 +1784,9 @@ CREATE FUNCTION metadata.fetchdatamodel(idapp numeric) RETURNS TABLE(id integer,
             ) as refcol
             from metadata.appcolumns as cols
             left outer join metadata.datatypes as dt on dt.id = cols.datatypeid
-            where cols.apptableid = tbl.id AND (cols.columnname != 'apptableid' AND cols.columnname != 'jsondata')
+            where cols.apptableid = tbl.id
+              AND (cols.columnname != 'apptableid' AND cols.columnname != 'jsondata')
+              AND (cols.allowedroles is null OR cols.allowedroles = '{}' OR cols.allowedroles && userRoles)
           ) t
         ) as appcolumns
       FROM metadata.apptables AS tbl
@@ -1775,7 +1796,7 @@ CREATE FUNCTION metadata.fetchdatamodel(idapp numeric) RETURNS TABLE(id integer,
 $$;
 
 
-ALTER FUNCTION metadata.fetchdatamodel(idapp numeric) OWNER TO appowner;
+ALTER FUNCTION metadata.fetchdatamodel(idapp numeric, iduser integer) OWNER TO appowner;
 
 --
 -- Name: formrecordadd(integer, integer[], text[]); Type: FUNCTION; Schema: metadata; Owner: appowner
@@ -1911,10 +1932,10 @@ $$;
 ALTER FUNCTION metadata.formrecorddelete(idform integer, idrec integer) OWNER TO appowner;
 
 --
--- Name: formrecordfindbyid(integer, integer); Type: FUNCTION; Schema: metadata; Owner: appowner
+-- Name: formrecordfindbyid(integer, integer, integer); Type: FUNCTION; Schema: metadata; Owner: appowner
 --
 
-CREATE FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer) RETURNS json
+CREATE FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer, iduser integer DEFAULT NULL::integer) RETURNS json
     LANGUAGE plpgsql
     AS $$
 
@@ -1929,7 +1950,7 @@ CREATE FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer) RETUR
     tableId INTEGER;
 
     cur_fields CURSOR(id INTEGER)
-    FOR SELECT * FROM metadata.appformGetFields(id);
+    FOR SELECT * FROM metadata.appformGetFields(id, iduser);
 
   BEGIN
     select tbl.id into tableId from metadata.pageforms pf, metadata.appcolumns col, metadata.apptables tbl
@@ -1940,7 +1961,6 @@ CREATE FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer) RETUR
     OPEN cur_fields(tableId);
 
     execStr := 'SELECT * from metadata.getColumnElementsFromRecord(''' || cur_fields || ''', ' || idrec || ', true);';
-
     EXECUTE execStr INTO resp;
 
     CLOSE cur_fields;
@@ -1958,17 +1978,12 @@ CREATE FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer) RETUR
     RAISE NOTICE '%', execStr;
 
     EXECUTE 'SELECT row_to_json(t) FROM ( ' || execStr || ' ) t;' INTO result;
-
-    RAISE NOTICE '========================';
-    RAISE NOTICE '%', result;
-    RAISE NOTICE '========================';
-
     RETURN result;
   END;
 $$;
 
 
-ALTER FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer) OWNER TO appowner;
+ALTER FUNCTION metadata.formrecordfindbyid(idform integer, idrec integer, iduser integer) OWNER TO appowner;
 
 --
 -- Name: formrecordupdate(integer, integer, integer[], text[]); Type: FUNCTION; Schema: metadata; Owner: appowner
@@ -2149,17 +2164,14 @@ CREATE FUNCTION metadata.getcolumnelementsfromfielddata(ref refcursor, fieldids 
         LOOP
           IF (fieldid = rec_field.appcolumnid AND rec_field.columnname <> ALL ( ARRAY['updatedat'] ) ) THEN
             valueFnd := true;
-            RAISE NOTICE 'columnname: %  datatype: %  jsonfield %  text: %', rec_field.columnname, rec_field.datatype, rec_field.jsonfield, fieldvals[idx];
+--             RAISE NOTICE 'columnname: %  datatype: %  jsonfield %  text: %', rec_field.columnname, rec_field.datatype, rec_field.jsonfield, fieldvals[idx];
 
-            RAISE NOTICE 'rec_field.datatype: %', rec_field.datatype;
+--             RAISE NOTICE 'rec_field.datatype: %', rec_field.datatype;
             IF (rec_field.datatype = 'text' OR rec_field.datatype = 'timestamp' OR rec_field.datatype = 'json' OR rec_field.datatype = 'varchar' OR rec_field.datatype = 'integer[]') THEN
               quotes := '''';
             ELSE
               quotes := '';
             END IF;
-            RAISE NOTICE '-----------------------------';
-            RAISE NOTICE 'fieldvals[%]: %  jsonfield: %', idx, fieldvals[idx], rec_field.jsonfield;
-            RAISE NOTICE '-----------------------------';
             IF (rec_field.datatype = 'integer[]' AND rec_field.jsonfield = false) THEN
               -- change the array string
               fieldVal := replace(replace(fieldvals[idx], '[', '{'), ']', '}');
@@ -2177,11 +2189,16 @@ CREATE FUNCTION metadata.getcolumnelementsfromfielddata(ref refcursor, fieldids 
                 ELSE
                   comma := ', ';
                 END IF;
+                RAISE NOTICE 'datatype: %', rec_field.datatype;
                 IF (rec_field.datatype = 'text' OR rec_field.datatype = 'timestamp' OR rec_field.datatype = 'json' OR rec_field.datatype = 'varchar') THEN
                   quotes := E'\"';
                 ELSE
                   quotes := '';
+                  IF(fieldVal = '' AND rec_field.datatype = 'integer') THEN
+                    fieldVal := 'null';
+                  END IF;
                 END IF;
+                RAISE NOTICE 'fieldVal: .%.  quotes: .%.', fieldVal, quotes;
                 jsonStr := jsonStr || comma || '"' || rec_field.columnname || '": ' || quotes || fieldVal || quotes;
               END IF;
             ELSIF (rec_field.columnname <> 'createdat') THEN
@@ -2564,6 +2581,38 @@ $$;
 ALTER FUNCTION metadata.getresourcevalues(idresource character varying) OWNER TO appowner;
 
 --
+-- Name: getuserrolesarray(integer); Type: FUNCTION; Schema: metadata; Owner: appowner
+--
+
+CREATE FUNCTION metadata.getuserrolesarray(iduser integer DEFAULT NULL::integer) RETURNS integer[]
+    LANGUAGE plpgsql
+    AS $$
+
+  DECLARE
+	  userRoles integer[] := ARRAY[]::integer[];
+	  user_role RECORD;
+	  user_roles CURSOR(id INTEGER) FOR SELECT * FROM app.getUserRoles(id);
+
+  BEGIN
+    IF (iduser IS NOT NULL) THEN
+      OPEN user_roles(iduser);
+      LOOP
+        FETCH user_roles INTO user_role;
+        EXIT WHEN NOT FOUND;
+        userRoles := array_append(userRoles, user_role.roleid);
+      END LOOP;
+      CLOSE user_roles;
+    END IF;
+
+    RETURN userRoles;
+  END;
+
+$$;
+
+
+ALTER FUNCTION metadata.getuserrolesarray(iduser integer) OWNER TO appowner;
+
+--
 -- Name: loadappbunos(integer); Type: FUNCTION; Schema: metadata; Owner: appowner
 --
 
@@ -2633,7 +2682,7 @@ CREATE FUNCTION metadata.menubulkadd(nodes json[]) RETURNS integer
         SELECT lookup.id INTO parentid FROM lookup WHERE lookup.origid = tmp;
       END IF;
 
-      RAISE NOTICE 'centos-node: id: %  label: %  parentid: %  pos: %' , id, labelStr, parentid, pos;
+      RAISE NOTICE 'node: id: %  label: %  parentid: %  pos: %' , id, labelStr, parentid, pos;
       EXECUTE 'INSERT INTO metadata.menuitems (id, label, parentid, position, routerpath) VALUES' ||
               '(DEFAULT, ''' || labelStr || ''', ' || parentid || ', ' || pos ||', ''undefined'') ' ||
               'RETURNING metadata.menuitems.id;'
@@ -2673,7 +2722,7 @@ CREATE FUNCTION metadata.menubulkdelete(nodes json[]) RETURNS integer
       labelStr := substring(labelStr, 2, char_length(labelStr)-2);
       parentid := node->'parentid';
 
-      RAISE NOTICE 'centos-node: id: %  label: %  parentid: %' , delid, labelStr, parentid;
+      RAISE NOTICE 'node: id: %  label: %  parentid: %' , delid, labelStr, parentid;
       DELETE FROM metadata.menuitems where menuitems.id = delid;
 
     END LOOP;
@@ -2710,7 +2759,7 @@ CREATE FUNCTION metadata.menubulkupdate(nodes json[]) RETURNS integer
       parentid := node->'parentid';
       pos      := node->'itemposition';
 
-      RAISE NOTICE 'centos-node: id: %  label: %  parentid: %  pos: %' , id, labelStr, parentid, pos;
+      RAISE NOTICE 'node: id: %  label: %  parentid: %  pos: %' , id, labelStr, parentid, pos;
       EXECUTE 'UPDATE metadata.menuitems SET label = $2, parentid = $3, position = $4 WHERE id = $1'
       USING id, labelStr, parentid, pos;
     END LOOP;
@@ -2943,21 +2992,9 @@ CREATE FUNCTION metadata.pageformsfindbyid(idapp numeric, idpage numeric, iduser
 
   DECLARE
     actions JSON := metadata.pageFormsGetActionsByPage(idpage);
-	  userRoles integer[] := ARRAY[]::integer[];
-	  user_role RECORD;
-	  user_roles CURSOR(id INTEGER) FOR SELECT * FROM app.getUserRoles(id);
+	  userRoles integer[] := metadata.getUserRolesArray(iduser);
 
-	BEGIN
-    IF (iduser IS NOT NULL) THEN
-      OPEN user_roles(iduser);
-      LOOP
-        FETCH user_roles INTO user_role;
-        EXIT WHEN NOT FOUND;
-        RAISE NOTICE 'roleid: %', user_role.roleid;
-        userRoles := array_append(userRoles, user_role.roleid);
-      END LOOP;
-    END IF;
-
+  BEGIN
 		RETURN QUERY
 		SELECT
       page.appid,
@@ -3375,7 +3412,8 @@ CREATE TABLE app.adhoc_queries (
     jsondata jsonb,
     createdat timestamp without time zone,
     updatedat timestamp without time zone DEFAULT now(),
-    reporttemplateid integer
+    reporttemplateid integer,
+    ownerid integer
 );
 
 
@@ -3840,7 +3878,8 @@ CREATE TABLE app.reporttemplates (
     createdat timestamp without time zone,
     updatedat timestamp without time zone DEFAULT now(),
     primarytableid integer,
-    jsondata jsonb
+    jsondata jsonb,
+    ownerid integer
 );
 
 
@@ -4433,7 +4472,9 @@ CREATE TABLE metadata.appcolumns (
     name character varying(40),
     masterdisplay character varying(128),
     displayorder integer,
-    active boolean DEFAULT true
+    active boolean DEFAULT true,
+    allowedroles integer[],
+    allowededitroles integer[]
 );
 
 
@@ -5499,7 +5540,7 @@ COPY app.activity (id, appid, label, description, createdat, updatedat, jsondata
 -- Data for Name: adhoc_queries; Type: TABLE DATA; Schema: app; Owner: appowner
 --
 
-COPY app.adhoc_queries (id, name, appid, jsondata, createdat, updatedat, reporttemplateid) FROM stdin;
+COPY app.adhoc_queries (id, name, appid, jsondata, createdat, updatedat, reporttemplateid, ownerid) FROM stdin;
 \.
 
 
@@ -6011,7 +6052,7 @@ COPY app.priority (id, appid, label, description, createdat, updatedat, jsondata
 -- Data for Name: reporttemplates; Type: TABLE DATA; Schema: app; Owner: appowner
 --
 
-COPY app.reporttemplates (id, appid, name, createdat, updatedat, primarytableid, jsondata) FROM stdin;
+COPY app.reporttemplates (id, appid, name, createdat, updatedat, primarytableid, jsondata, ownerid) FROM stdin;
 \.
 
 
@@ -7202,7 +7243,7 @@ COPY metadata.apiactions (id, name, description) FROM stdin;
 -- Data for Name: appcolumns; Type: TABLE DATA; Schema: metadata; Owner: appowner
 --
 
-COPY metadata.appcolumns (id, apptableid, columnname, label, datatypeid, length, jsonfield, createdat, updatedat, mastertable, mastercolumn, name, masterdisplay, displayorder, active) FROM stdin;
+COPY metadata.appcolumns (id, apptableid, columnname, label, datatypeid, length, jsonfield, createdat, updatedat, mastertable, mastercolumn, name, masterdisplay, displayorder, active, allowedroles, allowededitroles) FROM stdin;
 \.
 
 
@@ -7571,7 +7612,7 @@ SELECT pg_catalog.setval('app.activities_id_seq', 88, true);
 -- Name: adhoc_queries_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.adhoc_queries_id_seq', 52, true);
+SELECT pg_catalog.setval('app.adhoc_queries_id_seq', 59, true);
 
 
 --
@@ -7585,21 +7626,21 @@ SELECT pg_catalog.setval('app.appbunos_id_seq', 1078, true);
 -- Name: appdata_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdata_id_seq', 1303, true);
+SELECT pg_catalog.setval('app.appdata_id_seq', 1315, true);
 
 
 --
 -- Name: appdataattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdataattachments_id_seq', 64, true);
+SELECT pg_catalog.setval('app.appdataattachments_id_seq', 68, true);
 
 
 --
 -- Name: attachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.attachments_id_seq', 126, true);
+SELECT pg_catalog.setval('app.attachments_id_seq', 131, true);
 
 
 --
@@ -7627,7 +7668,7 @@ SELECT pg_catalog.setval('app.issueattachments_id_seq', 1, false);
 -- Name: issues_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.issues_id_seq', 381, true);
+SELECT pg_catalog.setval('app.issues_id_seq', 383, true);
 
 
 --
@@ -7697,7 +7738,7 @@ SELECT pg_catalog.setval('app.status_id_seq', 45, true);
 -- Name: userattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.userattachments_id_seq', 120, true);
+SELECT pg_catalog.setval('app.userattachments_id_seq', 125, true);
 
 
 --
@@ -7760,7 +7801,7 @@ SELECT pg_catalog.setval('metadata.apiactions_id_seq', 4, true);
 -- Name: appcolumns_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 544, true);
+SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 546, true);
 
 
 --
@@ -7816,7 +7857,7 @@ SELECT pg_catalog.setval('metadata.fieldcategories_id_seq', 2, true);
 -- Name: formeventactions_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 243, true);
+SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 247, true);
 
 
 --
@@ -8656,6 +8697,14 @@ ALTER TABLE ONLY app.adhoc_queries
 
 
 --
+-- Name: adhoc_queries adhoc_queries_users_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.adhoc_queries
+    ADD CONSTRAINT adhoc_queries_users_id_fk FOREIGN KEY (ownerid) REFERENCES app.users(id);
+
+
+--
 -- Name: appbunos appbunos_applications_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
 --
 
@@ -8797,6 +8846,14 @@ ALTER TABLE ONLY app.reporttemplates
 
 ALTER TABLE ONLY app.reporttemplates
     ADD CONSTRAINT reporttemplates_apptables_id_fk FOREIGN KEY (primarytableid) REFERENCES metadata.apptables(id);
+
+
+--
+-- Name: reporttemplates reporttemplates_users_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.reporttemplates
+    ADD CONSTRAINT reporttemplates_users_id_fk FOREIGN KEY (ownerid) REFERENCES app.users(id);
 
 
 --
@@ -9296,13 +9353,6 @@ GRANT ALL ON FUNCTION metadata.appformfindbyid(idrec numeric) TO appuser;
 
 
 --
--- Name: FUNCTION appformgetfields(idtable numeric); Type: ACL; Schema: metadata; Owner: appowner
---
-
-GRANT ALL ON FUNCTION metadata.appformgetfields(idtable numeric) TO appuser;
-
-
---
 -- Name: FUNCTION appformgetformtables(); Type: ACL; Schema: metadata; Owner: appowner
 --
 
@@ -9349,13 +9399,6 @@ GRANT ALL ON FUNCTION metadata.datamapgetfields(idtable numeric) TO appuser;
 --
 
 GRANT ALL ON FUNCTION metadata.datamapgettableoptions(idapp numeric) TO appuser;
-
-
---
--- Name: FUNCTION formrecordadd(idform integer, fieldids integer[], fieldvals text[]); Type: ACL; Schema: metadata; Owner: appowner
---
-
-GRANT ALL ON FUNCTION metadata.formrecordadd(idform integer, fieldids integer[], fieldvals text[]) TO appuser;
 
 
 --
