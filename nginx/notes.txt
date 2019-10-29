@@ -17,3 +17,12 @@ docker run --rm -p 8080:80 -d --name nginx load-balance-nginx
 NOTE:
 This works well in Firefox but not in Chrome
 
+# registry
+docker run -d -p 5000:5000 --restart=always --name registry registry:2
+docker pull nginx
+docker tag nginx:latest localhost:5000/nginx
+docker push localhost:5000/nginx
+docker tag load-balanced-app:latest localhost:5000/load-balanced-app
+docker push localhost:5000/load-balanced-app
+docker tag load-balance-nginx:latest localhost:5000/load-balance-nginx
+docker push localhost:5000/load-balance-nginx
