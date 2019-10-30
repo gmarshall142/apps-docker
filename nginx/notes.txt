@@ -58,7 +58,7 @@ docker image save -o ~/docker/images/load-balanced-app.tar localhost:5000/load-b
 docker image save -o ~/docker/images/load-balance-nginx.tar localhost:5000/load-balance-nginx
 
 
-# importing an image
+# loading an image
 docker image load -i ~/docker/images/node.tar
 docker image load -i ~/docker/images/nginx.tar
 docker image load -i ~/docker/images/load-balanced-app.tar
