@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  db:
+    build:
+      context: postgres
+      dockerfile: Dockerfile-10.9
+    image: appfactory-pg:10.9
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD: 'docker'
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.2
+    ports:
+      - 5433:5432
+    volumes:
+      - $APPFACTORY_VOLUME_PATH/postgres/data:/var/lib/postgresql/data
+
+networks:
+  static-network:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

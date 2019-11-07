@@ -1,5 +1,5 @@
 # build image
-docker build -t appfactory-pg:10.9 .
+docker build -f Dockerfile-10.9 -t appfactory-pg:10.9 .
 
 # run script with password and env-file : existing volume
 ./runWithVolume.sh docker ~/docker/config/env-vars.txt
