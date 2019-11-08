@@ -8,7 +8,9 @@ services:
     image: appfactory-pg:10.9
     container_name: postgres
     environment:
-      POSTGRES_PASSWORD: 'docker'
+      POSTGRES_PASSWORD: ${POSTGRES_PSWD}
+      POSTGRES_PSWD: ${POSTGRES_PSWD}
+      POSTGRES_OWNER_PSWD: ${POSTGRES_OWNER_PSWD}
     networks:
       static-network:
         ipv4_address: 172.20.0.2
