@@ -19,6 +19,36 @@ services:
     volumes:
       - $APPFACTORY_VOLUME_PATH/postgres/data:/var/lib/postgresql/data
 
+  server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+    image: appfactory-server
+    container_name: appserver
+    environment:
+      POSTGRES_HOST:          172.20.0.2
+      POSTGRES_PORT:          5432
+      POSTGRES_NAME:          ${POSTGRES_NAME}
+      POSTGRES_USER:          ${POSTGRES_USER}
+      POSTGRES_PASSWORD:      ${POSTGRES_PSWD}
+      POSTGRES_PSWD:          ${POSTGRES_PSWD}
+      POSTGRES_OWNER_PSWD:    ${POSTGRES_OWNER_PSWD}
+      APPFACTORY_VOLUME_PATH: /usr/volumes
+      VUE_APP_EMAIL:          geoff.marshal.ctr@navy.mil
+      VUE_APP_PSWD:           password
+      REST_APP_MODE:          DEV
+      REST_APP_USERID:        3575
+      VUE_APP_MODE:           DEV
+      VUE_APP_LEVEL:          debug
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.3
+    ports:
+      - 3000:3000
+    volumes:
+      - $APPFACTORY_SOURCE_PATH/services:/usr/src/app
+      - $APPFACTORY_VOLUME_PATH:/usr/volumes
+
 networks:
   static-network:
     ipam:
