@@ -1,0 +1,14 @@
+# build image
+docker build -f Dockerfile -t appfactory-server .
+
+# run container
+docker container run --rm --name appserver --env-file=/Users/gmarshall/docker/config/env-vars.txt \
+-d -p 3000:3000 \
+-v $APPFACTORY_SOURCE_PATH/services:/usr/src/app \
+appfactory-server
+
+# run bash in an existing container
+docker exec -it appserver /bin/bash
+
+# view logs
+docker container logs -f appserver
