@@ -68,4 +68,70 @@ the container bash shell as the 'postgres' user:
 docker exec -it postgres /bin/bash
 su postgres /home/scripts/test-setup.sh
 ```
+### REST Server
+The REST service handles requests from the front-end and runs as a Node application.  This is built in the __server__
+directory and is defined under the __server__ service.
+Key attributes in this service are:
+* build - the build definition
+  * context - specifies using the 'postgres' subdirectory
+  * dockerfile - the docker file to build from, currently 'Dockerfile'.  This can be updated as other Node versions are 
+  used.  
+* image - the image name [appfactory-server]
+* container_name - the container instance name that will appear in the 'docker container ls' listing [appserver]
+* environment - environment variables that will be set in the running container.  These make use of environment
+variables that must be set on the host machine:
+  * POSTGRES_PASSWORD
+  * POSTGRES_PSWD
+  * POSTGRES_OWNER_PSWD
+      POSTGRES_HOST:          postgres
+      POSTGRES_PORT:          5432
+      POSTGRES_NAME:          ${POSTGRES_NAME}
+      POSTGRES_USER:          ${POSTGRES_USER}
+      POSTGRES_PASSWORD:      ${POSTGRES_PSWD}
+      POSTGRES_PSWD:          ${POSTGRES_PSWD}
+      POSTGRES_OWNER_PSWD:    ${POSTGRES_OWNER_PSWD}
+      APPFACTORY_VOLUME_PATH: /usr/volumes
+      VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
+      VUE_APP_PSWD:           ${VUE_APP_PSWD}
+      REST_APP_MODE:          ${REST_APP_MODE}
+      REST_APP_USERID:        ${REST_APP_USERID}
+      VUE_APP_MODE:           ${VUE_APP_MODE}
+      VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
+* networks - static network setting using the sub-net defined by the YAML file
+* ports - port forwarding from the host to the container
+  * 3000:3000
+* volumes - the source code for the REST application
+  * $APPFACTORY_SOURCE_PATH/services:/usr/src/app - this is the mapping from the host machine directory to the 
+  container directory.  The environment variable _APPFACTORY_SOURCE_PATH_ must be set on the host machine and
+  will contain the subdirectory _/services_.
+  * $APPFACTORY_VOLUME_PATH/postgres/data:/var/lib/postgresql/data - this is the mapping from the host machine directory
+  to the container directory.  The environment variable _APPFACTORY_VOLUME_PATH_ must be set on the host machine and
+  will contain the subdirectories /logs, /files, and /help.
+ 
+### Web Server
+The Web service provides the front-end web application.  This is built in the __web__ directory and is defined under 
+the __web__ service.
+Key attributes in this service are:
+* build - the build definition
+  * context - specifies using the 'web' subdirectory
+  * dockerfile - the docker file to build from, currently 'Dockerfile'.
+* image - the image name [appfactory-web]
+* container_name - the container instance name that will appear in the 'docker container ls' listing [web]
+* environment - environment variables that will be set in the running container.  These make use of environment
+variables that must be set on the host machine:
+  * POSTGRES_PASSWORD
+  * POSTGRES_PSWD
+  * POSTGRES_OWNER_PSWD
+      VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
+      VUE_APP_PSWD:           ${VUE_APP_PSWD}
+      VUE_APP_MODE:           ${VUE_APP_MODE}
+      VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
+      SERVERPORT:             3000
+* networks - static network setting using the sub-net defined by the YAML file
+* ports - port forwarding from the host to the container
+  * 8080:8080
+* volumes - the source code for the Web application using Vue
+  * $APPFACTORY_SOURCE_PATH/appfactory:/usr/src/web - this is the mapping from the host machine directory to the 
+  container directory.  The environment variable _APPFACTORY_SOURCE_PATH_ must be set on the host machine and
+  will contain the subdirectory _/appfactory_.
  
