@@ -1,6 +1,23 @@
 version: '3'
 
 services:
+  nginx:
+    build:
+      context: nginx
+      dockerfile: Dockerfile
+    image: appfactory-nginx
+    container_name: app-nginx
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.2
+    ports:
+      - 80:80
+#      - 443:443
+    volumes:
+      - ./certs:/etc/nginx/certs
+      - $APPFACTORY_VOLUME_PATH/logs:/usr/volumes/logs
+    command: [nginx-debug, '-g', 'daemon off;']
+
   db:
     build:
       context: postgres
@@ -13,7 +30,7 @@ services:
       POSTGRES_OWNER_PSWD: ${POSTGRES_OWNER_PSWD}
     networks:
       static-network:
-        ipv4_address: 172.20.0.2
+        ipv4_address: 172.20.0.3
     ports:
       - 5433:5432
     volumes:
@@ -42,7 +59,7 @@ services:
       VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
     networks:
       static-network:
-        ipv4_address: 172.20.0.3
+        ipv4_address: 172.20.0.4
     ports:
       - 3000:3000
     volumes:
@@ -60,10 +77,11 @@ services:
       VUE_APP_PSWD:           ${VUE_APP_PSWD}
       VUE_APP_MODE:           ${VUE_APP_MODE}
       VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
-      SERVERPORT:             3000
+      VUE_APP_REST_HOST:      www.appfactory.com/api
+      VUE_APP_REST_PORT:
     networks:
       static-network:
-        ipv4_address: 172.20.0.4
+        ipv4_address: 172.20.0.5
     ports:
       - 8080:8080
     volumes:

@@ -1,0 +1,9 @@
+# run nginx container
+docker run --name docker-nginx -p 80:80 nginx
+
+# build application docker app
+cd nginx
+docker build -t appfactory-nginx .
+
+# run nginx
+docker container run --rm -p 80:80 -d --name app-nginx appfactory-nginx
