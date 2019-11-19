@@ -135,3 +135,36 @@ variables that must be set on the host machine:
   container directory.  The environment variable _APPFACTORY_SOURCE_PATH_ must be set on the host machine and
   will contain the subdirectory _/appfactory_.
  
+ ### Nginx Service
+ __TBD__
+ 
+## Launching Containers
+Multiple docker-compose files are available for launching the containers for different purposes.  This work is on-going
+and attempts to reuse configurations, but it requires using the _'-f'_ commandline parameter to launch multiple files.
+Prior versions provided a _'extends'_ key word that allows configurations to be pulled from other files, but this 
+functionality is not available in version 3.X.
+ 
+### Web Development
+Developing locally for the web server can be done by using the dc-web.yml compose file running the postgresql and 
+REST server as Docker containers. 
+ ``` javascript
+docker-compose -f dc-web.yml up
+docker-compose -f dc-web.yml down
+```
+The application can be run in the browser using: http://www.appfactory.com:8080      
+
+### All Three Services in Containers
+All three of the application services in containers can be started and stopped using the following command line:
+``` javascript
+docker-compose -f dc-web.yml -f dc-app.yml up
+docker-compose -f dc-web.yml -f dc-app.yml down
+``` 
+OR
+``` javascript
+./dc-app.sh up
+./dc-app.sh down
+``` 
+
+The application can be run in the browser using: http://www.appfactory.com:8080      
+
+

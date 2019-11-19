@@ -1,0 +1,25 @@
+version: '3.7'
+
+services:
+  web:
+    build:
+      context: web
+      dockerfile: Dockerfile
+    image: appfactory-web
+    container_name: web
+    environment:
+      VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
+      VUE_APP_PSWD:           ${VUE_APP_PSWD}
+      VUE_APP_MODE:           ${VUE_APP_MODE}
+      VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
+      VUE_APP_PROTOCOL:       http
+      VUE_APP_REST_HOST:      www.appfactory.com
+      VUE_APP_REST_PORT:      3000
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.5
+    ports:
+      - 8080:8080
+    volumes:
+      - $APPFACTORY_SOURCE_PATH/appfactory:/usr/src/web
+

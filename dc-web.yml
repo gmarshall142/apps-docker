@@ -1,0 +1,62 @@
+version: '3.7'
+
+services:
+  db:
+    build:
+      context: postgres
+      dockerfile: Dockerfile-10.9
+    image: appfactory-pg:10.9
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PSWD}
+      POSTGRES_PSWD: ${POSTGRES_PSWD}
+      POSTGRES_OWNER_PSWD: ${POSTGRES_OWNER_PSWD}
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.3
+    ports:
+      - 5433:5432
+    volumes:
+      - $APPFACTORY_VOLUME_PATH/postgres/data:/var/lib/postgresql/data
+
+
+  server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+    image: appfactory-server
+    container_name: appserver
+    environment:
+      NODE_ENV:               development
+      POSTGRES_HOST:          postgres
+      POSTGRES_PORT:          5432
+      POSTGRES_NAME:          ${POSTGRES_NAME}
+      POSTGRES_USER:          ${POSTGRES_USER}
+      POSTGRES_PASSWORD:      ${POSTGRES_PSWD}
+      POSTGRES_PSWD:          ${POSTGRES_PSWD}
+      POSTGRES_OWNER_PSWD:    ${POSTGRES_OWNER_PSWD}
+      APPFACTORY_VOLUME_PATH: /usr/volumes
+      VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
+      VUE_APP_PSWD:           ${VUE_APP_PSWD}
+      REST_APP_MODE:          ${REST_APP_MODE}
+      REST_APP_USERID:        ${REST_APP_USERID}
+      VUE_APP_MODE:           ${VUE_APP_MODE}
+      VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
+      VUE_APP_PROTOCOL:       http
+      VUE_APP_REST_HOST:      www.appfactory.com
+      VUE_APP_REST_PORT:      3000
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.4
+    ports:
+      - 3000:3000
+      - 56745:56745
+    volumes:
+      - $APPFACTORY_SOURCE_PATH/services:/usr/src/app
+      - $APPFACTORY_VOLUME_PATH:/usr/volumes
+
+networks:
+  static-network:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
