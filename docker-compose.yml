@@ -43,6 +43,7 @@ services:
     image: appfactory-server
     container_name: appserver
     environment:
+      NODE_ENV:               development
       POSTGRES_HOST:          postgres
       POSTGRES_PORT:          5432
       POSTGRES_NAME:          ${POSTGRES_NAME}
@@ -57,11 +58,15 @@ services:
       REST_APP_USERID:        ${REST_APP_USERID}
       VUE_APP_MODE:           ${VUE_APP_MODE}
       VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
+      VUE_APP_PROTOCOL:       http
+      VUE_APP_REST_HOST:      www.appfactory.com/api
+      VUE_APP_REST_PORT:
     networks:
       static-network:
         ipv4_address: 172.20.0.4
     ports:
       - 3000:3000
+      - 56745:56745
     volumes:
       - $APPFACTORY_SOURCE_PATH/services:/usr/src/app
       - $APPFACTORY_VOLUME_PATH:/usr/volumes
@@ -77,6 +82,7 @@ services:
       VUE_APP_PSWD:           ${VUE_APP_PSWD}
       VUE_APP_MODE:           ${VUE_APP_MODE}
       VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
+      VUE_APP_PROTOCOL:       http
       VUE_APP_REST_HOST:      www.appfactory.com/api
       VUE_APP_REST_PORT:
     networks:
