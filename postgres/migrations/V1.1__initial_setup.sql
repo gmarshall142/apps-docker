@@ -7958,21 +7958,21 @@ SELECT pg_catalog.setval('app.appbunos_id_seq', 1078, true);
 -- Name: appdata_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdata_id_seq', 1389, true);
+SELECT pg_catalog.setval('app.appdata_id_seq', 1397, true);
 
 
 --
 -- Name: appdataattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdataattachments_id_seq', 128, true);
+SELECT pg_catalog.setval('app.appdataattachments_id_seq', 150, true);
 
 
 --
 -- Name: attachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.attachments_id_seq', 166, true);
+SELECT pg_catalog.setval('app.attachments_id_seq', 192, true);
 
 
 --
@@ -8000,7 +8000,7 @@ SELECT pg_catalog.setval('app.issueattachments_id_seq', 1, false);
 -- Name: issues_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.issues_id_seq', 395, true);
+SELECT pg_catalog.setval('app.issues_id_seq', 399, true);
 
 
 --
@@ -8077,7 +8077,7 @@ SELECT pg_catalog.setval('app.support_id_seq', 16, true);
 -- Name: userattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.userattachments_id_seq', 160, true);
+SELECT pg_catalog.setval('app.userattachments_id_seq', 186, true);
 
 
 --
