@@ -1,0 +1,26 @@
+version: '3.7'
+
+services:
+  nginx:
+    build:
+      context: nginx
+      dockerfile: Dockerfile
+    image: appfactory-nginx
+    container_name: app-nginx
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.2
+    ports:
+      - 80:80
+#      - 443:443
+    volumes:
+      - ./certs:/etc/nginx/certs
+      - $APPFACTORY_VOLUME_PATH/logs:/usr/volumes/logs
+    command: [nginx-debug, '-g', 'daemon off;']
+
+  server:
+    environment:
+      NODE_ENV:
+      VUE_APP_PROTOCOL:       http
+      VUE_APP_REST_HOST:      www.appfactory.com/api
+      VUE_APP_REST_PORT:

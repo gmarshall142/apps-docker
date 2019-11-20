@@ -54,8 +54,6 @@ services:
       APPFACTORY_VOLUME_PATH: /usr/volumes
       VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
       VUE_APP_PSWD:           ${VUE_APP_PSWD}
-      REST_APP_MODE:          ${REST_APP_MODE}
-      REST_APP_USERID:        ${REST_APP_USERID}
       VUE_APP_MODE:           ${VUE_APP_MODE}
       VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
       VUE_APP_PROTOCOL:       http

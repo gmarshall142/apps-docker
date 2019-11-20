@@ -93,8 +93,6 @@ variables that must be set on the host machine:
       APPFACTORY_VOLUME_PATH: /usr/volumes
       VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
       VUE_APP_PSWD:           ${VUE_APP_PSWD}
-      REST_APP_MODE:          ${REST_APP_MODE}
-      REST_APP_USERID:        ${REST_APP_USERID}
       VUE_APP_MODE:           ${VUE_APP_MODE}
       VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
 * networks - static network setting using the sub-net defined by the YAML file
@@ -167,4 +165,18 @@ OR
 
 The application can be run in the browser using: http://www.appfactory.com:8080      
 
+### Nginx 
+The application can be run using an Nginx endpoint container and redirecting requests to the other application 
+containers.  This makes use of the previous docker compose files and adds one for the nginx service:
+``` javascript
+docker-compose -f dc-web.yml -f dc-app.yml -f dc-nginx.yml up
+docker-compose -f dc-web.yml -f dc-app.yml -f dc-nginx.yml down
+``` 
+OR
+``` javascript
+./dc-nginx.sh up
+./dc-nginx.sh down
+``` 
+
+The application can be run in the browser using: http://www.appfactory.com      
 
