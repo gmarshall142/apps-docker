@@ -4,7 +4,7 @@ services:
   nginx:
     build:
       context: nginx
-      dockerfile: Dockerfile
+      dockerfile: nginx/df-nginx-http
     image: appfactory-nginx
     container_name: app-nginx
     networks:

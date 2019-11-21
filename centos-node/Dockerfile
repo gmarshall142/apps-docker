@@ -3,7 +3,7 @@ FROM centos:centos7
 RUN groupadd --gid 1000 node \
   && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
 
-# node install taken from official node image Dockerfile-10.9
+# node install taken from official node image df-nginx-http-10.9
 ENV NODE_VERSION 10.15.1
 
 RUN set -ex \
