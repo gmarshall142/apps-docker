@@ -180,3 +180,8 @@ OR
 
 The application can be run in the browser using: http://www.appfactory.com      
 
+## Running Chrome ignoring invalid certificate warning
+On a Mac running the following in a terminal:
+``` javascript
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --ignore-certificate-errors &> /dev/null &
+```

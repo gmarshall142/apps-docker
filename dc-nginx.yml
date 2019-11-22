@@ -24,3 +24,9 @@ services:
       VUE_APP_PROTOCOL:       http
       VUE_APP_REST_HOST:      www.appfactory.com/api
       VUE_APP_REST_PORT:
+
+  web:
+    environment:
+      VUE_APP_PROTOCOL:       http
+      VUE_APP_REST_HOST:      www.appfactory.com/api
+      VUE_APP_REST_PORT:

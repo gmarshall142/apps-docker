@@ -5,22 +5,26 @@ services:
     build:
       context: nginx
       dockerfile: df-nginx-https
-    image: appfactory-nginx
-    container_name: app-nginx
+    image: appfactory-nginx-https
+    container_name: app-nginx-https
     networks:
       static-network:
         ipv4_address: 172.20.0.2
     ports:
-      - 80:80
-#      - 443:443
+      - 443:443
     volumes:
-      - ./certs:/etc/nginx/certs
       - $APPFACTORY_VOLUME_PATH/logs:/usr/volumes/logs
     command: [nginx-debug, '-g', 'daemon off;']
 
   server:
     environment:
       NODE_ENV:
-      VUE_APP_PROTOCOL:       http
+      VUE_APP_PROTOCOL:       https
+      VUE_APP_REST_HOST:      www.appfactory.com/api
+      VUE_APP_REST_PORT:
+
+  web:
+    environment:
+      VUE_APP_PROTOCOL:       https
       VUE_APP_REST_HOST:      www.appfactory.com/api
       VUE_APP_REST_PORT:
