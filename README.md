@@ -133,10 +133,17 @@ variables that must be set on the host machine:
   container directory.  The environment variable _APPFACTORY_SOURCE_PATH_ must be set on the host machine and
   will contain the subdirectory _/appfactory_.
  
- ### Nginx Service
- __TBD__
+### Nginx Service
+The Nginx Service provides a reverse proxy for making calls to a single server and rerouting the requests to the 
+appropriate application server.  This also allows SSL/HTTPS requests from the browser while using HTTP when 
+communicating to the application servers.  Currently it has not been determined whether it makes sense to use the nginx
+service in a deployment or whether this is a proof-of-concept, but regardless working with the nginx service identifies
+issues in the configuration of the services and the URLs used in the application.
+
+There are two sets of YAML and Dockerfiles; one for HTTP and one for HTTPS.  There are also two nginx configuration
+files; _nginx-http.conf_ and _nginx-https.conf.  
  
-## Launching Containers
+# Launching Containers
 Multiple docker-compose files are available for launching the containers for different purposes.  This work is on-going
 and attempts to reuse configurations, but it requires using the _'-f'_ commandline parameter to launch multiple files.
 Prior versions provided a _'extends'_ key word that allows configurations to be pulled from other files, but this 
@@ -177,11 +184,51 @@ OR
 ./dc-nginx.sh up
 ./dc-nginx.sh down
 ``` 
+The application can be run in the browser using: http://www.appfactory.com.    
 
-The application can be run in the browser using: http://www.appfactory.com      
+Launching the HTTPS version is done by using the _dc-nginx-https.yml_:
+``` javascript
+docker-compose -f dc-web.yml -f dc-app.yml -f dc-nginx-https.yml up
+docker-compose -f dc-web.yml -f dc-app.yml -f dc-nginx-https.yml down
+``` 
+OR
+``` javascript
+./dc-nginx-https.sh up
+./dc-nginx-https.sh down
+``` 
+The application can be run in the browser using: https://www.appfactory.com     
 
-## Running Chrome ignoring invalid certificate warning
+## Running HTTP & HTTPS in browsers using project certificates
+Currently the project uses self-signed certificates which can be replaced later with signed certs.  This does cause
+issues when running in the browser.
+### Chrome
+Chrome prevents running HTTPS using the self-signed certificates and will flag them as invalid.  Ignoring invalid the
+certificate warning requires launching Chrome with the _ignore-certificate-errors_ flag.
 On a Mac running the following in a terminal:
 ``` javascript
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --ignore-certificate-errors &> /dev/null &
 ```
+### Firefox
+Firefox allows the user to ignore the warnings by selecting the 'Advanced' button in the Warning Screen and then 
+selecting the 'Accept the Risk and Continue' button and the second dialog.
+### Safari
+Safari also cautions regarding invalid certificates but allows the user to ignore the warnings and proceed to the site.
+
+# NOTES
+There were several issues encountered while working with the docker configurations.  
+### Changes to Images
+When making changes to the containers subsequent docker compose launches are not sensitive to the changes and will 
+continue to use a previously built docker image.  It is necessary to remove the old image version causing it to be 
+rebuilt.  This can be done by reviewing the images and removing the changed container:
+``` javascript
+docker images # displays all images
+docker image rm appfactory-web  # removes the appfactory-web image
+```
+A script has been included that cleans all container images causing them to be rebuilt when running docker compose up.
+Various lines can be commented out if there are no changes to those images.  The postgres container in particular may
+take longer to rebuild.
+``` javascript
+./clean-images.sh
+```
+
+
