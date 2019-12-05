@@ -3844,6 +3844,43 @@ ALTER SEQUENCE app.bunos_id_seq OWNED BY app.bunos.id;
 
 
 --
+-- Name: dashboardreports; Type: TABLE; Schema: app; Owner: appowner
+--
+
+CREATE TABLE app.dashboardreports (
+    id integer NOT NULL,
+    userid integer NOT NULL,
+    adhocqueryid integer NOT NULL,
+    createdat timestamp without time zone,
+    updatedat timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE app.dashboardreports OWNER TO appowner;
+
+--
+-- Name: dashboardreport_id_seq; Type: SEQUENCE; Schema: app; Owner: appowner
+--
+
+CREATE SEQUENCE app.dashboardreport_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE app.dashboardreport_id_seq OWNER TO appowner;
+
+--
+-- Name: dashboardreport_id_seq; Type: SEQUENCE OWNED BY; Schema: app; Owner: appowner
+--
+
+ALTER SEQUENCE app.dashboardreport_id_seq OWNED BY app.dashboardreports.id;
+
+
+--
 -- Name: groups; Type: TABLE; Schema: app; Owner: appowner
 --
 
@@ -5570,6 +5607,13 @@ ALTER TABLE ONLY app.bunos ALTER COLUMN id SET DEFAULT nextval('app.bunos_id_seq
 
 
 --
+-- Name: dashboardreports id; Type: DEFAULT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.dashboardreports ALTER COLUMN id SET DEFAULT nextval('app.dashboardreport_id_seq'::regclass);
+
+
+--
 -- Name: groups id; Type: DEFAULT; Schema: app; Owner: appowner
 --
 
@@ -6303,6 +6347,14 @@ COPY app.bunos (id, identifier, description, createdat, updatedat) FROM stdin;
 
 
 --
+-- Data for Name: dashboardreports; Type: TABLE DATA; Schema: app; Owner: appowner
+--
+
+COPY app.dashboardreports (id, userid, adhocqueryid, createdat, updatedat) FROM stdin;
+\.
+
+
+--
 -- Data for Name: groups; Type: TABLE DATA; Schema: app; Owner: appowner
 --
 
@@ -6755,7 +6807,6 @@ COPY app.users (id, active, email, firstname, mi, lastname, designationid, phone
 3040	1	ramon.f.vasquez1@usmc.mil	Ramon		Vasquez	5	9104496839			CN=VASQUEZ.RAMON.F.1187351568,OU=USMC,OU=PKI,OU=DoD,O=U.S. Government,C=US	1187351568	VASQUEZ.RAMON.F	16	25	3	2	0	\N	\N	\N	3	\N	0	\N
 3042	1	timothy.j.vaughn@usmc.mil	Timothy		Vaughn	5	9104496065			CN=VAUGHN.TIMOTHY.JOSHUA.1024275180,OU=USMC,OU=PKI,OU=DoD,O=U.S. Government,C=US	1024275180	VAUGHN.TIMOTHY.JOSHUA	4	25	3	2	0	\N	\N	\N	3	\N	0	1
 3044	1	leigha.mabe@usmc.mil	Leigha		Veganunez	3	2544627512			CN=VEGANUNEZ.LEIGHA.MARIE.1462636039,OU=USMC,OU=PKI,OU=DoD,O=U.S. Government,C=US	1462636039	VEGANUNEZ.LEIGHA.MARIE	3	25	3	77	0	\N	\N	\N	3	\N	0	1
-10	\N	bob.projecttasks1@squadron.mil	Bob		Projecttasks1	\N	(111)555-1212	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2018-12-08 10:18:31.758	\N	\N	\N	\N	1	\N
 3046	1	vvillasenor@bh.com	Victor		Villasenor	5	8172401371		8585776830	CN=VILLASENOROJEDA.VICTOR.IVAN.1273605823,OU=CONTRACTOR,OU=PKI,OU=DoD,O=U.S. Government,C=US	1133281564	VILLASENOROJEDA.VICTOR.IVAN	20	31	2	8	0	\N	\N	\N	3	\N	0	1
 3048	1	mvonbergen@bh.com	Michael		Vonbergen	5	8508812651	6412651		CN=VON BERGEN.MICHAEL.EDWARD.1257076551,OU=CONTRACTOR,OU=PKI,OU=DoD,O=U.S. Government,C=US	1257076551	VON BERGEN.MICHAEL.EDWARD	20	16	2	11	0	\N	\N	\N	1	\N	0	2
 3050	1	christopher.voss@usmc.mil	Christopher		Voss	5	3156367661	6367661		CN=VOSS.CHRISTOPHER.JIN.1138177820,OU=USMC,OU=PKI,OU=DoD,O=U.S. Government,C=US	1138177820	VOSS.CHRISTOPHER.JIN	12	53	3	7	0	\N	\N	\N	3	\N	0	\N
@@ -7489,7 +7540,6 @@ COPY app.users (id, active, email, firstname, mi, lastname, designationid, phone
 3572	1	bob@bob.com	Travis		Makarowski	4	2524646396			CN=MAKAROWSKI.TRAVIS.W.1141323233xd,OU=USN,OU=PKI,OU=DoD,O=U.S. Government,C=US	1065484494		19	159	2	17	0	\N	\N	\N	2	\N	0	\N
 3574	1	travis.maka@navy.mil	Travis		Makarowski	1	2343455432			CN=MAKAROWSKI.TRAVIS.W.1141323233x,OU=USN,OU=PKI,OU=DoD,O=U.S. Government,C=US	-1		4	3	1	18	0	\N	\N	\N	2	\N	0	\N
 2	1	david.abbott.16@us.af.mil	David		Test	5	5058537389	2637389113	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	1	\N
-3	1	testing.test.16@us.af.mil	Testing	Q	Test	5	1112223333	9999999999	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	1	\N
 3573	1	steven.groninga@navy.mil	Steven		Groninga	4	2527208500			CN=GRONINGA.STEVEN.CHARLES.1065484494,OU=USN,OU=PKI,OU=DoD,O=U.S. Government,C=US	1065484494		12	10	1	18	0	\N	\N	\N	2	\N	0	\N
 6	\N	dave.tdtracker1@email.com	Dave		Tdtracker1	\N		\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2018-12-07 23:37:29.847	\N	\N	\N	\N	1	\N
 7	\N	donna.tdtracker2	Donna	\N	Tdtracker2	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2018-12-07 18:39:39.899019	\N	\N	\N	\N	1	\N
@@ -7500,10 +7550,12 @@ COPY app.users (id, active, email, firstname, mi, lastname, designationid, phone
 16	\N	gmanager3@navy.mil	Guy	C	Manager3	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2019-02-28 01:53:40.896	\N	\N	\N	\N	1	\N
 2174	1	david.abbott.16@us.af.mil	David		Abbott	5	5058537389	2637389113		CN=ABBOTT.DAVID.J.1248049800,OU=USAF,OU=PKI,OU=DoD,O=U.S. Government,C=US	1065484494	ABBOTT.DAVID.J	20	6	1	5	0	\N	\N	\N	1	\N	0	\N
 33	\N	matt.bailey@fsr.mil	Matt	A	Bailey	\N	111-555-1212	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2019-05-16 19:14:55.885	\N	\N	\N	\N	1	\N
-11	\N	fred.projecttasks2@squadron.mil	Fred	Q	Projecttasks2	\N	567-111-2234	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2018-12-08 05:19:02.917	\N	\N	\N	\N	1	\N
-3575	1	geoff.marshal.ctr@navy.mil	Geoff		Marshall	4	252-464-8744			CN=MARSHALL.GEOFF.EDWARD.1065484494,OU=USN,OU=PKI,OU=DoD,O=U.S. Government,C=US	1065484494		12	10	1	18	0	\N	\N	\N	2	\N	0	\N
-12	\N	chris.projecttasks@squadron.mil	Chris	A	Projecttasks3	\N	123-111-1234	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2018-12-08 05:19:29.179	\N	\N	\N	\N	1	\N
-13	\N	root.projecttasks4@navy.mil	Root	\N	Projecttasks4	\N	333-123-3333	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	2018-12-08 05:20:47.477	\N	\N	\N	\N	1	\N
+3	1	testing.test.16@us.af.mil	Testing	Q	Test	5	1112223333	9999999999	\N	CN=TEST.TESTING.Q.12345,OU=Contractor,OU=PKI,OU=Dod,O=U.S. Government,C=US	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	1	\N
+11	\N	fred.projecttasks2@squadron.mil	Fred	Q	Projecttasks2	\N	567-111-2234	\N	\N	CN=PROJECTTASKS2.FRED.Q.12345,OU=Contractor,OU=PKI,OU=Dod,O=U.S. Government,C=US	\N	\N	\N	\N	\N	\N	\N	2018-12-08 05:19:02.917	\N	\N	\N	\N	1	\N
+3575	1	geoff.marshal.ctr@navy.mil	Geoff		Marshall	4	252-464-8744			CN=MARSHALL.GEOFFREY.EDWARD.1510036804,OU=CONTRACTOR,OU=PKI,OU=DoD,O=U.S. Government,C=US	1065484494		12	10	1	18	0	\N	\N	\N	2	\N	0	\N
+10	\N	bob.projecttasks1@squadron.mil	Bob		Projecttasks1	\N	(111)555-1212	\N	\N	CN=PROJECTTASKS1.BOB.12345,OU=Contractor,OU=PKI,OU=Dod,O=U.S. Government,C=US	\N	\N	\N	\N	\N	\N	\N	2018-12-08 10:18:31.758	\N	\N	\N	\N	1	\N
+13	\N	root.projecttasks4@navy.mil	Root	\N	Projecttasks4	\N	333-123-3333	\N	\N	CN=PROJECTTASKS4.ROOT.12345,OU=Contractor,OU=PKI,OU=Dod,O=U.S. Government,C=US	\N	\N	\N	\N	\N	\N	\N	2018-12-08 05:20:47.477	\N	\N	\N	\N	1	\N
+12	\N	chris.projecttasks@squadron.mil	Chris	A	Projecttasks3	\N	123-111-1234	\N	\N	CN=PROJECTTASKS3.CHRIS.A.12345,OU=Contractor,OU=PKI,OU=Dod,O=U.S. Government,C=US	\N	\N	\N	\N	\N	\N	\N	2018-12-08 05:19:29.179	\N	\N	\N	\N	1	\N
 \.
 
 
@@ -7958,21 +8010,21 @@ SELECT pg_catalog.setval('app.appbunos_id_seq', 1078, true);
 -- Name: appdata_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdata_id_seq', 1397, true);
+SELECT pg_catalog.setval('app.appdata_id_seq', 1405, true);
 
 
 --
 -- Name: appdataattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdataattachments_id_seq', 150, true);
+SELECT pg_catalog.setval('app.appdataattachments_id_seq', 158, true);
 
 
 --
 -- Name: attachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.attachments_id_seq', 192, true);
+SELECT pg_catalog.setval('app.attachments_id_seq', 196, true);
 
 
 --
@@ -7980,6 +8032,13 @@ SELECT pg_catalog.setval('app.attachments_id_seq', 192, true);
 --
 
 SELECT pg_catalog.setval('app.bunos_id_seq', 4469, true);
+
+
+--
+-- Name: dashboardreport_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
+--
+
+SELECT pg_catalog.setval('app.dashboardreport_id_seq', 1, true);
 
 
 --
@@ -8000,7 +8059,7 @@ SELECT pg_catalog.setval('app.issueattachments_id_seq', 1, false);
 -- Name: issues_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.issues_id_seq', 399, true);
+SELECT pg_catalog.setval('app.issues_id_seq', 402, true);
 
 
 --
@@ -8077,7 +8136,7 @@ SELECT pg_catalog.setval('app.support_id_seq', 16, true);
 -- Name: userattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.userattachments_id_seq', 186, true);
+SELECT pg_catalog.setval('app.userattachments_id_seq', 190, true);
 
 
 --
@@ -8140,7 +8199,7 @@ SELECT pg_catalog.setval('metadata.apiactions_id_seq', 4, true);
 -- Name: appcolumns_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 551, true);
+SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 552, true);
 
 
 --
@@ -8203,7 +8262,7 @@ SELECT pg_catalog.setval('metadata.fieldcategories_id_seq', 2, true);
 -- Name: formeventactions_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 270, true);
+SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 272, true);
 
 
 --
@@ -8351,6 +8410,14 @@ ALTER TABLE ONLY app.attachments
 
 ALTER TABLE ONLY app.bunos
     ADD CONSTRAINT bunos_pk PRIMARY KEY (id);
+
+
+--
+-- Name: dashboardreports dashboardreport_pk; Type: CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.dashboardreports
+    ADD CONSTRAINT dashboardreport_pk PRIMARY KEY (id);
 
 
 --
@@ -8762,6 +8829,13 @@ CREATE UNIQUE INDEX bunos_label_uindex ON app.bunos USING btree (identifier);
 
 
 --
+-- Name: dashboardreport_id_uindex; Type: INDEX; Schema: app; Owner: appowner
+--
+
+CREATE UNIQUE INDEX dashboardreport_id_uindex ON app.dashboardreports USING btree (id);
+
+
+--
 -- Name: groups_id_uindex; Type: INDEX; Schema: app; Owner: appowner
 --
 
@@ -9110,6 +9184,22 @@ ALTER TABLE ONLY app.appdata
 
 ALTER TABLE ONLY app.appdata
     ADD CONSTRAINT appdata_apptables_id_fk FOREIGN KEY (apptableid) REFERENCES metadata.apptables(id);
+
+
+--
+-- Name: dashboardreports dashboardreport_users_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.dashboardreports
+    ADD CONSTRAINT dashboardreport_users_id_fk FOREIGN KEY (userid) REFERENCES app.users(id);
+
+
+--
+-- Name: dashboardreports dashboardreports_adhoc_queries_id_fk; Type: FK CONSTRAINT; Schema: app; Owner: appowner
+--
+
+ALTER TABLE ONLY app.dashboardreports
+    ADD CONSTRAINT dashboardreports_adhoc_queries_id_fk FOREIGN KEY (adhocqueryid) REFERENCES app.adhoc_queries(id);
 
 
 --
@@ -10048,6 +10138,20 @@ GRANT ALL ON SEQUENCE app.bunos_id_seq TO appuser;
 
 
 --
+-- Name: TABLE dashboardreports; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE app.dashboardreports TO appuser;
+
+
+--
+-- Name: SEQUENCE dashboardreport_id_seq; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT SELECT,USAGE ON SEQUENCE app.dashboardreport_id_seq TO appuser;
+
+
+--
 -- Name: TABLE groups; Type: ACL; Schema: app; Owner: appowner
 --
 
@@ -10220,6 +10324,13 @@ GRANT ALL ON SEQUENCE app.status_id_seq TO appuser;
 --
 
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE app.support TO appuser;
+
+
+--
+-- Name: SEQUENCE support_id_seq; Type: ACL; Schema: app; Owner: appowner
+--
+
+GRANT SELECT,USAGE ON SEQUENCE app.support_id_seq TO appuser;
 
 
 --

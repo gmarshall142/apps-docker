@@ -216,6 +216,13 @@ Safari also cautions regarding invalid certificates but allows the user to ignor
 
 # NOTES
 There were several issues encountered while working with the docker configurations.  
+### URL
+Currently the application is launched by using the 'www.appfactory.com' Domain name.  When working locally it is
+necessary to add this to the machines hosts file:
+``` javascript   
+
+```
+
 ### Changes to Images
 When making changes to the containers subsequent docker compose launches are not sensitive to the changes and will 
 continue to use a previously built docker image.  It is necessary to remove the old image version causing it to be 
