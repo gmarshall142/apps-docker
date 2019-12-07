@@ -19,6 +19,7 @@ This works well in Firefox but not in Chrome
 
 # registry
 docker run -d -p 5000:5000 --restart=always --name registry registry:2
+docker update --restart=no registry
 docker pull nginx
 docker tag nginx:latest localhost:5000/nginx
 docker push localhost:5000/nginx
@@ -64,3 +65,6 @@ docker image load -i ~/docker/images/nginx.tar
 docker image load -i ~/docker/images/load-balanced-app.tar
 docker image load -i ~/docker/images/load-balance-nginx.tar
 
+# find process using a port
+# Using BSD netcat (Debian, Ubuntu, MacOS system, ...)
+$ cat /path/to/logfile.log | nc -q0 localhost 5000

@@ -1,0 +1,2 @@
+access Kibana by entering: http://localhost:5601 in your browser
+
