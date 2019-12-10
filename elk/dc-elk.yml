@@ -7,6 +7,7 @@ services:
       dockerfile: df-elasticsearch
       args:
         ELK_VERSION: $ELK_VERSION
+    container_name: elasticsearch
     volumes:
       - type: bind
         source: ./elasticsearch/config/elasticsearch.yml
@@ -31,6 +32,7 @@ services:
       dockerfile: df-logstash
       args:
         ELK_VERSION: $ELK_VERSION
+    container_name: logstash
     volumes:
       - type: bind
         source: ./logstash/config/logstash.yml
@@ -40,6 +42,7 @@ services:
         source: ./logstash/pipeline
         target: /usr/share/logstash/pipeline
         read_only: true
+      - $APPFACTORY_VOLUME_PATH/logs/tmp:/home/logs
     ports:
       - "5000:5000"
       - "9600:9600"
@@ -56,6 +59,7 @@ services:
       dockerfile: df-kibana
       args:
         ELK_VERSION: $ELK_VERSION
+    container_name: kibana
     volumes:
       - type: bind
         source: ./kibana/config/kibana.yml
