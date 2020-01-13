@@ -42,7 +42,7 @@ services:
         source: ./logstash/pipeline
         target: /usr/share/logstash/pipeline
         read_only: true
-      - $APPFACTORY_VOLUME_PATH/logs/tmp:/home/logs
+      - $APPFACTORY_VOLUME_PATH/logs:/home/logs
     ports:
       - "5000:5000"
       - "9600:9600"
