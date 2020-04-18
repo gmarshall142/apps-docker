@@ -4,6 +4,7 @@ delete from app.support where appid >=69 and appid <=72;
 -- app.*
 -- app.roleassignments
 delete from app.roleassignments where roleid >= 28 and roleid <= 35;
+delete from app.roleassignments where (userid >= 17 and userid <= 24) or (userid >= 27 and userid <= 32) or (userid >= 43 and userid <=44);
 -- app.usergroups
 delete from app.usergroups where groupid >= 12 and groupid <= 14;
 -- app.roles

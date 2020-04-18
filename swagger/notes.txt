@@ -1,0 +1,10 @@
+docker pull swaggerapi/swagger-ui
+
+docker container run -p 8000:8080 swaggerapi/swagger-ui
+
+http://localhost:8000
+
+docker pull swaggerapi/swagger-editor
+
+docker container run -p 81:8080 swaggerapi/swagger-editor
+

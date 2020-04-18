@@ -3626,7 +3626,9 @@ CREATE TABLE app.adhoc_queries (
     createdat timestamp without time zone,
     updatedat timestamp without time zone DEFAULT now(),
     reporttemplateid integer,
-    ownerid integer
+    ownerid integer,
+    editaction boolean DEFAULT false,
+    deleteaction boolean DEFAULT false
 );
 
 
@@ -4129,9 +4131,7 @@ CREATE TABLE app.reporttemplates (
     updatedat timestamp without time zone DEFAULT now(),
     primarytableid integer,
     jsondata jsonb,
-    ownerid integer,
-    editaction boolean DEFAULT false,
-    deleteaction boolean DEFAULT false
+    ownerid integer
 );
 
 
@@ -5095,7 +5095,7 @@ CREATE TABLE metadata.formeventactions (
     actionid integer NOT NULL,
     actiondata jsonb,
     pageformid integer,
-    reporttemplateid integer
+    adhocqueryid integer
 );
 
 
@@ -5898,7 +5898,7 @@ COPY app.activity (id, appid, label, description, createdat, updatedat, jsondata
 -- Data for Name: adhoc_queries; Type: TABLE DATA; Schema: app; Owner: appowner
 --
 
-COPY app.adhoc_queries (id, name, appid, jsondata, createdat, updatedat, reporttemplateid, ownerid) FROM stdin;
+COPY app.adhoc_queries (id, name, appid, jsondata, createdat, updatedat, reporttemplateid, ownerid, editaction, deleteaction) FROM stdin;
 \.
 
 
@@ -6418,7 +6418,7 @@ COPY app.priority (id, appid, label, description, createdat, updatedat, jsondata
 -- Data for Name: reporttemplates; Type: TABLE DATA; Schema: app; Owner: appowner
 --
 
-COPY app.reporttemplates (id, appid, name, createdat, updatedat, primarytableid, jsondata, ownerid, editaction, deleteaction) FROM stdin;
+COPY app.reporttemplates (id, appid, name, createdat, updatedat, primarytableid, jsondata, ownerid) FROM stdin;
 \.
 
 
@@ -7780,7 +7780,7 @@ COPY metadata.fieldcategories (id, name, label) FROM stdin;
 -- Data for Name: formeventactions; Type: TABLE DATA; Schema: metadata; Owner: appowner
 --
 
-COPY metadata.formeventactions (id, eventid, actionid, actiondata, pageformid, reporttemplateid) FROM stdin;
+COPY metadata.formeventactions (id, eventid, actionid, actiondata, pageformid, adhocqueryid) FROM stdin;
 \.
 
 
@@ -7996,7 +7996,7 @@ SELECT pg_catalog.setval('app.activities_id_seq', 88, true);
 -- Name: adhoc_queries_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.adhoc_queries_id_seq', 59, true);
+SELECT pg_catalog.setval('app.adhoc_queries_id_seq', 69, true);
 
 
 --
@@ -8010,21 +8010,21 @@ SELECT pg_catalog.setval('app.appbunos_id_seq', 1078, true);
 -- Name: appdata_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdata_id_seq', 1405, true);
+SELECT pg_catalog.setval('app.appdata_id_seq', 1808, true);
 
 
 --
 -- Name: appdataattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdataattachments_id_seq', 158, true);
+SELECT pg_catalog.setval('app.appdataattachments_id_seq', 181, true);
 
 
 --
 -- Name: attachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.attachments_id_seq', 196, true);
+SELECT pg_catalog.setval('app.attachments_id_seq', 209, true);
 
 
 --
@@ -8059,7 +8059,7 @@ SELECT pg_catalog.setval('app.issueattachments_id_seq', 1, false);
 -- Name: issues_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.issues_id_seq', 402, true);
+SELECT pg_catalog.setval('app.issues_id_seq', 500, true);
 
 
 --
@@ -8087,7 +8087,7 @@ SELECT pg_catalog.setval('app.priority_id_seq', 14, true);
 -- Name: reporttemplates_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.reporttemplates_id_seq', 4, true);
+SELECT pg_catalog.setval('app.reporttemplates_id_seq', 19, true);
 
 
 --
@@ -8101,7 +8101,7 @@ SELECT pg_catalog.setval('app.resourcetypes_id_seq', 1, false);
 -- Name: roleassignments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.roleassignments_id_seq', 95, true);
+SELECT pg_catalog.setval('app.roleassignments_id_seq', 98, true);
 
 
 --
@@ -8115,7 +8115,7 @@ SELECT pg_catalog.setval('app.rolepermissions_id_seq', 1, false);
 -- Name: roles_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.roles_id_seq', 41, true);
+SELECT pg_catalog.setval('app.roles_id_seq', 42, true);
 
 
 --
@@ -8136,7 +8136,7 @@ SELECT pg_catalog.setval('app.support_id_seq', 16, true);
 -- Name: userattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.userattachments_id_seq', 190, true);
+SELECT pg_catalog.setval('app.userattachments_id_seq', 203, true);
 
 
 --
@@ -8150,7 +8150,7 @@ SELECT pg_catalog.setval('app.usergroups_id_seq', 49, true);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.users_id_seq', 42, true);
+SELECT pg_catalog.setval('app.users_id_seq', 44, true);
 
 
 --
@@ -8199,7 +8199,7 @@ SELECT pg_catalog.setval('metadata.apiactions_id_seq', 4, true);
 -- Name: appcolumns_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 552, true);
+SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 556, true);
 
 
 --
@@ -8262,7 +8262,7 @@ SELECT pg_catalog.setval('metadata.fieldcategories_id_seq', 2, true);
 -- Name: formeventactions_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 272, true);
+SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 279, true);
 
 
 --
@@ -9555,6 +9555,14 @@ ALTER TABLE ONLY metadata.formeventactions
 
 
 --
+-- Name: formeventactions formeventactions_adhoc_queries_id_fk; Type: FK CONSTRAINT; Schema: metadata; Owner: appowner
+--
+
+ALTER TABLE ONLY metadata.formeventactions
+    ADD CONSTRAINT formeventactions_adhoc_queries_id_fk FOREIGN KEY (adhocqueryid) REFERENCES app.adhoc_queries(id);
+
+
+--
 -- Name: formeventactions formeventactions_events_id_fk; Type: FK CONSTRAINT; Schema: metadata; Owner: appowner
 --
 
@@ -9568,14 +9576,6 @@ ALTER TABLE ONLY metadata.formeventactions
 
 ALTER TABLE ONLY metadata.formeventactions
     ADD CONSTRAINT formeventactions_pageforms_id_fk FOREIGN KEY (pageformid) REFERENCES metadata.pageforms(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- Name: formeventactions formeventactions_reporttemplates_id_fk; Type: FK CONSTRAINT; Schema: metadata; Owner: appowner
---
-
-ALTER TABLE ONLY metadata.formeventactions
-    ADD CONSTRAINT formeventactions_reporttemplates_id_fk FOREIGN KEY (reporttemplateid) REFERENCES app.reporttemplates(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

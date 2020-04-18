@@ -6362,7 +6362,6 @@ COPY app.groups (id, name, description, createdat, updatedat) FROM stdin;
 1	devs	AppFactory developers	2018-12-04 13:39:00.783889	2018-12-04 13:39:00.783889
 4	v22users	V-22 Users	2018-12-06 18:22:25.254	2018-12-06 18:22:25.254
 7	testgroup1	Test group 1	2018-12-07 12:59:50.29	2018-12-07 12:59:50.29
-8	testgroup2	Test group2	2018-12-07 13:00:00.159	2018-12-07 13:00:00.159
 9	testgroup3	Test group3	2018-12-07 13:00:27.999	2018-12-07 13:00:27.999
 6	admins	Project Administrators	2018-12-07 04:24:40.034	2018-12-07 18:19:23.555
 10	TD Tracker Users	TD Tracker users group	2018-12-07 18:30:02.817	2018-12-07 18:30:02.817
@@ -7781,6 +7780,7 @@ COPY metadata.fieldcategories (id, name, label) FROM stdin;
 --
 
 COPY metadata.formeventactions (id, eventid, actionid, actiondata, pageformid, adhocqueryid) FROM stdin;
+285	4	5	{}	\N	\N
 \.
 
 
@@ -7862,8 +7862,8 @@ COPY metadata.menuitems (id, parentid, label, iconid, appid, pageid, active, "po
 33	4	Form Builder	9	0	29	1	1	10	formbuilder
 111	44	Tables & Columns	\N	0	77	\N	3	10	tablemaint
 172	44	Server Request Actions	\N	0	78	1	5	10	requestactionmaint
-43	41	Menu Tree	\N	0	35	1	5	10	menutree
 36	4	App Access Request	9	0	30	1	7	10	appaccessrequest
+43	41	Menu Tree	\N	0	35	1	1	10	menutree
 \.
 
 
@@ -7989,42 +7989,42 @@ COPY metadata.urlactions (id, url, apiactionid, actiondata, appid, pre, post, me
 -- Name: activities_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.activities_id_seq', 88, true);
+SELECT pg_catalog.setval('app.activities_id_seq', 89, true);
 
 
 --
 -- Name: adhoc_queries_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.adhoc_queries_id_seq', 69, true);
+SELECT pg_catalog.setval('app.adhoc_queries_id_seq', 89, true);
 
 
 --
 -- Name: appbunos_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appbunos_id_seq', 1078, true);
+SELECT pg_catalog.setval('app.appbunos_id_seq', 1079, true);
 
 
 --
 -- Name: appdata_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdata_id_seq', 1808, true);
+SELECT pg_catalog.setval('app.appdata_id_seq', 1987, true);
 
 
 --
 -- Name: appdataattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.appdataattachments_id_seq', 181, true);
+SELECT pg_catalog.setval('app.appdataattachments_id_seq', 201, true);
 
 
 --
 -- Name: attachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.attachments_id_seq', 209, true);
+SELECT pg_catalog.setval('app.attachments_id_seq', 220, true);
 
 
 --
@@ -8045,7 +8045,7 @@ SELECT pg_catalog.setval('app.dashboardreport_id_seq', 1, true);
 -- Name: groups_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.groups_id_seq', 18, true);
+SELECT pg_catalog.setval('app.groups_id_seq', 19, true);
 
 
 --
@@ -8059,7 +8059,7 @@ SELECT pg_catalog.setval('app.issueattachments_id_seq', 1, false);
 -- Name: issues_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.issues_id_seq', 500, true);
+SELECT pg_catalog.setval('app.issues_id_seq', 525, true);
 
 
 --
@@ -8115,7 +8115,7 @@ SELECT pg_catalog.setval('app.rolepermissions_id_seq', 1, false);
 -- Name: roles_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.roles_id_seq', 42, true);
+SELECT pg_catalog.setval('app.roles_id_seq', 44, true);
 
 
 --
@@ -8136,7 +8136,7 @@ SELECT pg_catalog.setval('app.support_id_seq', 16, true);
 -- Name: userattachments_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.userattachments_id_seq', 203, true);
+SELECT pg_catalog.setval('app.userattachments_id_seq', 214, true);
 
 
 --
@@ -8150,7 +8150,7 @@ SELECT pg_catalog.setval('app.usergroups_id_seq', 49, true);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: app; Owner: appowner
 --
 
-SELECT pg_catalog.setval('app.users_id_seq', 44, true);
+SELECT pg_catalog.setval('app.users_id_seq', 46, true);
 
 
 --
@@ -8199,14 +8199,14 @@ SELECT pg_catalog.setval('metadata.apiactions_id_seq', 4, true);
 -- Name: appcolumns_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 556, true);
+SELECT pg_catalog.setval('metadata.appcolumns_id_seq', 559, true);
 
 
 --
 -- Name: applications_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.applications_id_seq', 76, true);
+SELECT pg_catalog.setval('metadata.applications_id_seq', 77, true);
 
 
 --
@@ -8262,14 +8262,14 @@ SELECT pg_catalog.setval('metadata.fieldcategories_id_seq', 2, true);
 -- Name: formeventactions_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 279, true);
+SELECT pg_catalog.setval('metadata.formeventactions_id_seq', 288, true);
 
 
 --
 -- Name: formresources_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.formresources_id_seq', 51, true);
+SELECT pg_catalog.setval('metadata.formresources_id_seq', 53, true);
 
 
 --
@@ -8297,7 +8297,7 @@ SELECT pg_catalog.setval('metadata.menuicons_id_seq', 28, true);
 -- Name: menuitems_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.menuitems_id_seq', 200, true);
+SELECT pg_catalog.setval('metadata.menuitems_id_seq', 204, true);
 
 
 --
@@ -8318,7 +8318,7 @@ SELECT pg_catalog.setval('metadata.pageforms_id_seq', 82, true);
 -- Name: pages_id_seq; Type: SEQUENCE SET; Schema: metadata; Owner: appowner
 --
 
-SELECT pg_catalog.setval('metadata.pages_id_seq', 119, true);
+SELECT pg_catalog.setval('metadata.pages_id_seq', 120, true);
 
 
 --
@@ -9631,7 +9631,7 @@ ALTER TABLE ONLY metadata.menuitems
 --
 
 ALTER TABLE ONLY metadata.menuitems
-    ADD CONSTRAINT menuitems_pages_id_fk FOREIGN KEY (pageid) REFERENCES metadata.pages(id);
+    ADD CONSTRAINT menuitems_pages_id_fk FOREIGN KEY (pageid) REFERENCES metadata.pages(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

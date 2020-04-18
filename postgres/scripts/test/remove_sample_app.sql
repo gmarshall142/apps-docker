@@ -5,6 +5,8 @@ delete from app.tableattachments where apptableid = 86;
 delete from app.tableattachments where apptableid = 118;
 -- attachments
 delete from app.attachments where path = '/apps/10';
+-- metadata.dashboardreports
+delete from app.dashboardreports where adhocqueryid = 52;
 -- app.*
 delete from app.issues where appid = 10;
 delete from app.activity where appid = 10;
@@ -18,17 +20,18 @@ delete from app.masterdata where appid = 10;
 delete from app.priority where appid = 10;
 delete from app.status where appid = 10;
 delete from app.appbunos where appid = 10;
-delete from app.adhoc_queries where appid = 10;
 -- metadata.formresources
 delete from metadata.formresources where appid = 10;
 -- metadata.urlactions
 delete from metadata.urlactions where appid = 10;
 -- metadata.formeventactions
-delete from metadata.formeventactions where (pageformid >= 61 and pageformid <= 63) or (pageformid >=75 and pageformid <= 81);
--- metadata.reporttemplates
-delete from app.reporttemplates where appid = 10;
+delete from metadata.formeventactions where (pageformid >= 61 and pageformid <= 63) or (pageformid >=75 and pageformid <= 82) or (adhocqueryid is not null);
+-- metadata.adhoc_queries
+delete from app.adhoc_queries where appid = 10;
 -- metadata.appqueries
 delete from metadata.appqueries where appid = 10;
+-- metadata.reporttemplates
+delete from app.reporttemplates where appid = 10;
 -- metadata.menuitems
 delete from metadata.menuitems where appid = 10;
 -- metadata.pageforms
@@ -56,10 +59,10 @@ delete from metadata.appcolumns where apptableid = 126;
 delete from metadata.appcolumns where apptableid = 128;
 -- metadata.apptables
 delete from metadata.apptables where appid = 10;
--- app.roleassignments : roleid = 3 or roleid = 15 or (roleid >= 37 and roleid <= 41)
+-- app.roleassignments : roleid = 3 or roleid = 15 or (roleid >= 37 and roleid <= 42)
 delete from app.roleassignments where roleid = 3;
 delete from app.roleassignments where roleid = 15;
-delete from app.roleassignments where roleid >= 37 and roleid <= 41;
+delete from app.roleassignments where roleid >= 37 and roleid <= 42;
 -- app.roles
 delete from app.roles where appid = 10;
 -- metadata.applications
