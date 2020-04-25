@@ -35,7 +35,7 @@ docker tag load-balance-nginx:latest localhost:5000/load-balance-nginx
 docker push localhost:5000/load-balance-nginx
 
 docker image ls
-~/workspace/app-factory/appfactory-docker/nginx (master) $ docker image ls
+~/workspace/apps/apps-docker/nginx (master) $ docker image ls
 REPOSITORY                          TAG                 IMAGE ID            CREATED             SIZE
 <none>                              <none>              2216c859b880        35 minutes ago      126MB
 localhost:5000/load-balanced-app    latest              4ee969497a3f        About an hour ago   933MB

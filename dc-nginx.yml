@@ -5,7 +5,7 @@ services:
     build:
       context: nginx
       dockerfile: df-nginx-http
-    image: appfactory-nginx
+    image: gemapps-nginx
     container_name: app-nginx
     networks:
       static-network:
@@ -15,22 +15,22 @@ services:
 #      - 443:443
     volumes:
       - ./certs:/etc/nginx/certs
-      - $APPFACTORY_VOLUME_PATH/logs:/usr/volumes/logs
+      - $GEMAPPS_VOLUME_PATH/logs:/usr/volumes/logs
     command: [nginx-debug, '-g', 'daemon off;']
 
   server:
     environment:
       NODE_ENV:
       VUE_APP_PROTOCOL:       http
-      VUE_APP_REST_HOST:      www.appfactory.com/api
+      VUE_APP_REST_HOST:      www.gemapps.com/api
       VUE_APP_REST_PORT:      ""
 
   web:
     environment:
       VUE_APP_PROTOCOL:       http
-      VUE_APP_REST_HOST:      www.appfactory.com/api
+      VUE_APP_REST_HOST:      www.gemapps.com/api
       VUE_APP_REST_PORT:      ""
-      VUE_APP_WEB_HOST:       www.appfactory.com
+      VUE_APP_WEB_HOST:       www.gemapps.com
       VUE_APP_WEB_PORT:       ""
 
 

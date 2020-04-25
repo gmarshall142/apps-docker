@@ -13,7 +13,7 @@ services:
         source: ./elasticsearch/config/elasticsearch.yml
         target: /usr/share/elasticsearch/config/elasticsearch.yml
         read_only: true
-      - $APPFACTORY_VOLUME_PATH/elk/elasticsearch:/usr/share/elasticsearch/data
+      - $GEMAPPS_VOLUME_PATH/elk/elasticsearch:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -42,7 +42,7 @@ services:
         source: ./logstash/pipeline
         target: /usr/share/logstash/pipeline
         read_only: true
-      - $APPFACTORY_VOLUME_PATH/logs:/home/logs
+      - $GEMAPPS_VOLUME_PATH/logs:/home/logs
     ports:
       - "5000:5000"
       - "9600:9600"

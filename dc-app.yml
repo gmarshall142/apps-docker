@@ -5,7 +5,7 @@ services:
     build:
       context: web
       dockerfile: Dockerfile
-    image: appfactory-web
+    image: gemapps-web
     container_name: web
     environment:
       VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
@@ -13,7 +13,7 @@ services:
       VUE_APP_MODE:           ${VUE_APP_MODE}
       VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
       VUE_APP_PROTOCOL:       http
-      VUE_APP_REST_HOST:      www.appfactory.com
+      VUE_APP_REST_HOST:      www.gemapps.com
       VUE_APP_REST_PORT:      3000
     networks:
       static-network:
@@ -21,5 +21,5 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - $APPFACTORY_SOURCE_PATH/appfactory:/usr/src/web
+      - $GEMAPPS_SOURCE_PATH/appUI:/usr/src/web
 

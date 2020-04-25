@@ -1,4 +1,4 @@
 #!/bin/bash
 
-psql appfactory < /home/scripts/test/add_sample_app.sql
-psql appfactory < /home/scripts/test/add_apps.sql
+psql gmarshall < /home/scripts/test/add_sample_app.sql
+psql gmarshall < /home/scripts/test/add_apps.sql

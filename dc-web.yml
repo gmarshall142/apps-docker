@@ -5,7 +5,7 @@ services:
     build:
       context: postgres
       dockerfile: Dockerfile-10.9
-    image: appfactory-pg:10.9
+    image: gemapps-pg:10.9
     container_name: postgres
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PSWD}
@@ -17,14 +17,14 @@ services:
     ports:
       - 5433:5432
     volumes:
-      - $APPFACTORY_VOLUME_PATH/postgres/data:/var/lib/postgresql/data
+      - $GEMAPPS_VOLUME_PATH/postgres/data:/var/lib/postgresql/data
 
 
   server:
     build:
       context: server
       dockerfile: Dockerfile
-    image: appfactory-server
+    image: gemapps-server
     container_name: appserver
     environment:
       NODE_ENV:               development
@@ -35,13 +35,13 @@ services:
       POSTGRES_PASSWORD:      ${POSTGRES_PSWD}
       POSTGRES_PSWD:          ${POSTGRES_PSWD}
       POSTGRES_OWNER_PSWD:    ${POSTGRES_OWNER_PSWD}
-      APPFACTORY_VOLUME_PATH: /usr/volumes
+      GEMAPPS_VOLUME_PATH:    /usr/volumes
       VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
       VUE_APP_PSWD:           ${VUE_APP_PSWD}
       VUE_APP_MODE:           ${VUE_APP_MODE}
       VUE_APP_LEVEL:          ${VUE_APP_LEVEL}
       VUE_APP_PROTOCOL:       http
-      VUE_APP_REST_HOST:      www.appfactory.com
+      VUE_APP_REST_HOST:      www.gemapps.com
       VUE_APP_REST_PORT:      3000
     networks:
       static-network:
@@ -49,8 +49,8 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - $APPFACTORY_SOURCE_PATH/services:/usr/src/app
-      - $APPFACTORY_VOLUME_PATH:/usr/volumes
+      - $GEMAPPS_SOURCE_PATH/services:/usr/src/app
+      - $GEMAPPS_VOLUME_PATH:/usr/volumes
 
 networks:
   static-network:

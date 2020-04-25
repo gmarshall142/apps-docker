@@ -1,4 +1,4 @@
-# appfactory-docker
+# gemapps-docker
 This repository contains a YAML file for launching the test environment in Docker.  There are subdirectories for each
 of the containers used in the development environment.  The docker-composition configuration relies heavily on 
 environment variables which will be described in the following text.
@@ -23,7 +23,7 @@ Key attributes in this service are:
   * context - specifies using the 'postgres' subdirectory
   * dockerfile - the docker file to build from, currently 'Dockerfile-10.9'.  This can be updated as other Postgresql
   versions are used.  
-* image - the image name [appfactory-pg:10.9]
+* image - the image name [gemapps-pg:10.9]
 * container_name - the container instance name that will appear in the 'docker container ls' listing [postgres]
 * environment - environment variables that will be set in the running container.  These make use of environment
 variables that must be set on the host machine:
@@ -37,14 +37,14 @@ variables that must be set on the host machine:
   host)
 * volumes - the database volume where the Postgresql data files will be stored which will be mapped in the container
 to '/var/lib/postgresql/data'
-  * $APPFACTORY_VOLUME_PATH/postgres/data:/var/lib/postgresql/data - this is the mapping from the host machine directory
-  to the container directory.  The environment variable _APPFACTORY_VOLUME_PATH_ must be set on the host machine and
+  * $GEMAPPS_VOLUME_PATH/postgres/data:/var/lib/postgresql/data - this is the mapping from the host machine directory
+  to the container directory.  The environment variable _GEMAPPS_VOLUME_PATH_ must be set on the host machine and
   will contain the subdirectories /postgresql/data.
 
 #### Database Persistence
 When the database container is started it will attempt to run the startup script defined in the 'postgres/init.sh' 
-script file.  The script attempts to create database user roles, create the 'appfactory' database, and create the
-'app' and 'metadata' schemas in the database.  If the $APPFACTORY_VOLUME_PATH/postgres/data directory does not exist
+script file.  The script attempts to create database user roles, create the 'gmarshall' database, and create the
+'app' and 'metadata' schemas in the database.  If the $GEMAPPS_VOLUME_PATH/postgres/data directory does not exist
 it will create the 'data' directory and the Postgresql files.  The database initialization script 
 'migrations/V1.1__initial_setup.sql' will be run to initialize the database tables.  Once the directory and files are
 created subsequent container startup will fail when running the 'init.sh' script leaving the database files and their 
@@ -76,7 +76,7 @@ Key attributes in this service are:
   * context - specifies using the 'postgres' subdirectory
   * dockerfile - the docker file to build from, currently 'Dockerfile'.  This can be updated as other Node versions are 
   used.  
-* image - the image name [appfactory-server]
+* image - the image name [gemapps-server]
 * container_name - the container instance name that will appear in the 'docker container ls' listing [appserver]
 * environment - environment variables that will be set in the running container.  These make use of environment
 variables that must be set on the host machine:
@@ -90,7 +90,7 @@ variables that must be set on the host machine:
       POSTGRES_PASSWORD:      ${POSTGRES_PSWD}
       POSTGRES_PSWD:          ${POSTGRES_PSWD}
       POSTGRES_OWNER_PSWD:    ${POSTGRES_OWNER_PSWD}
-      APPFACTORY_VOLUME_PATH: /usr/volumes
+      GEMAPPS_VOLUME_PATH:    /usr/volumes
       VUE_APP_EMAIL:          ${VUE_APP_EMAIL}
       VUE_APP_PSWD:           ${VUE_APP_PSWD}
       VUE_APP_MODE:           ${VUE_APP_MODE}
@@ -99,11 +99,11 @@ variables that must be set on the host machine:
 * ports - port forwarding from the host to the container
   * 3000:3000
 * volumes - the source code for the REST application
-  * $APPFACTORY_SOURCE_PATH/services:/usr/src/app - this is the mapping from the host machine directory to the 
-  container directory.  The environment variable _APPFACTORY_SOURCE_PATH_ must be set on the host machine and
+  * $GEMAPPS_SOURCE_PATH/services:/usr/src/app - this is the mapping from the host machine directory to the 
+  container directory.  The environment variable _GEMAPPS_SOURCE_PATH_ must be set on the host machine and
   will contain the subdirectory _/services_.
-  * $APPFACTORY_VOLUME_PATH/postgres/data:/var/lib/postgresql/data - this is the mapping from the host machine directory
-  to the container directory.  The environment variable _APPFACTORY_VOLUME_PATH_ must be set on the host machine and
+  * $GEMAPPS_VOLUME_PATH/postgres/data:/var/lib/postgresql/data - this is the mapping from the host machine directory
+  to the container directory.  The environment variable _GEMAPPS_VOLUME_PATH_ must be set on the host machine and
   will contain the subdirectories /logs, /files, and /help.
  
 ### Web Server
@@ -113,7 +113,7 @@ Key attributes in this service are:
 * build - the build definition
   * context - specifies using the 'web' subdirectory
   * dockerfile - the docker file to build from, currently 'Dockerfile'.
-* image - the image name [appfactory-web]
+* image - the image name [gemapps-web]
 * container_name - the container instance name that will appear in the 'docker container ls' listing [web]
 * environment - environment variables that will be set in the running container.  These make use of environment
 variables that must be set on the host machine:
@@ -129,9 +129,9 @@ variables that must be set on the host machine:
 * ports - port forwarding from the host to the container
   * 8080:8080
 * volumes - the source code for the Web application using Vue
-  * $APPFACTORY_SOURCE_PATH/appfactory:/usr/src/web - this is the mapping from the host machine directory to the 
-  container directory.  The environment variable _APPFACTORY_SOURCE_PATH_ must be set on the host machine and
-  will contain the subdirectory _/appfactory_.
+  * $GEMAPPS_SOURCE_PATH/appUi:/usr/src/web - this is the mapping from the host machine directory to the 
+  container directory.  The environment variable _AGEMAPPS_SOURCE_PATH_ must be set on the host machine and
+  will contain the subdirectory _/appUi_.
  
 ### Nginx Service
 The Nginx Service provides a reverse proxy for making calls to a single server and rerouting the requests to the 
@@ -156,7 +156,7 @@ REST server as Docker containers.
 docker-compose -f dc-web.yml up
 docker-compose -f dc-web.yml down
 ```
-The application can be run in the browser using: http://www.appfactory.com:8080      
+The application can be run in the browser using: http://www.gemapps.com:8080      
 
 ### All Three Services in Containers
 All three of the application services in containers can be started and stopped using the following command line:
@@ -170,7 +170,7 @@ OR
 ./dc-app.sh down
 ``` 
 
-The application can be run in the browser using: http://www.appfactory.com:8080      
+The application can be run in the browser using: http://www.gemapps.com:8080      
 
 ### Nginx 
 The application can be run using an Nginx endpoint container and redirecting requests to the other application 
@@ -184,7 +184,7 @@ OR
 ./dc-nginx.sh up
 ./dc-nginx.sh down
 ``` 
-The application can be run in the browser using: http://www.appfactory.com.    
+The application can be run in the browser using: http://www.gemapps.com.    
 
 Launching the HTTPS version is done by using the _dc-nginx-https.yml_:
 ``` javascript
@@ -196,7 +196,7 @@ OR
 ./dc-nginx-https.sh up
 ./dc-nginx-https.sh down
 ``` 
-The application can be run in the browser using: https://www.appfactory.com     
+The application can be run in the browser using: https://www.gemapps.com     
 
 ## Running HTTP & HTTPS in browsers using project certificates
 Currently the project uses self-signed certificates which can be replaced later with signed certs.  This does cause
@@ -217,7 +217,7 @@ Safari also cautions regarding invalid certificates but allows the user to ignor
 # NOTES
 There were several issues encountered while working with the docker configurations.  
 ### URL
-Currently the application is launched by using the 'www.appfactory.com' Domain name.  When working locally it is
+Currently the application is launched by using the 'www.gemapps.com' Domain name.  When working locally it is
 necessary to add this to the machines hosts file:
 ``` javascript   
 
@@ -229,7 +229,7 @@ continue to use a previously built docker image.  It is necessary to remove the 
 rebuilt.  This can be done by reviewing the images and removing the changed container:
 ``` javascript
 docker images # displays all images
-docker image rm appfactory-web  # removes the appfactory-web image
+docker image rm gemapps-web  # removes the gemapps-web image
 ```
 A script has been included that cleans all container images causing them to be rebuilt when running docker compose up.
 Various lines can be commented out if there are no changes to those images.  The postgres container in particular may

@@ -4,8 +4,8 @@ RUN rm /etc/nginx/conf.d/default.conf
 
 COPY nginx-https.conf /etc/nginx/conf.d/default.conf
 
-COPY ./certs/appfactory.crt /etc/ssl/certs/appfactory.crt
+COPY ./certs/gemapps.crt /etc/ssl/certs/gemapps.crt
 COPY ./certs/dhparam.pem /etc/ssl/certs/dhparam.pem
-COPY ./certs/appfactory.key /etc/ssl/private/appfactory.key
+COPY ./certs/gemapps.key /etc/ssl/private/gemapps.key
 
 RUN   chmod 700 /etc/ssl/private
