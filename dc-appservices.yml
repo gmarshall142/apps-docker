@@ -1,0 +1,61 @@
+version: '3.7'
+
+services:
+  db:
+    build:
+      context: postgres
+      dockerfile: Dockerfile-10.9
+    image: gemapps-pg:10.9
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD:  ${GEMAPPS_POSTGRES_PSWD}
+#      POSTGRES_USER:      ${GEMAPPS_POSTGRES_USER}
+#      POSTGRES_DB:        ${GEMAPPS_POSTGRES_NAME}
+      GEMAPPS_POSTGRES_PSWD:      ${GEMAPPS_POSTGRES_PSWD}
+      POSTGRES_OWNER_PSWD: ${GEMAPPS_POSTGRES_OWNER_PSWD}
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.3
+    ports:
+      - 5433:5432
+    volumes:
+      - $GEMAPPS_VOLUME_PATH/postgres/data:/var/lib/postgresql/data
+
+
+  server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+    image: gemapps-server
+    container_name: appserver
+    environment:
+      NODE_ENV:                   development
+      POSTGRES_HOST:              postgres
+      POSTGRES_PORT:              5432
+      GEMAPPS_POSTGRES_NAME:      ${GEMAPPS_POSTGRES_NAME}
+      GEMAPPS_POSTGRES_USER:      ${GEMAPPS_POSTGRES_USER}
+      GEMAPPS_POSTGRES_PASSWORD:  ${GEMAPPS_POSTGRES_PSWD}
+      GEMAPPS_POSTGRES_PSWD:      ${GEMAPPS_POSTGRES_PSWD}
+#      POSTGRES_OWNER_PSWD:    ${GEMAPPS_POSTGRES_OWNER_PSWD}
+      GEMAPPS_VOLUME_PATH:        /usr/volumes
+      VUE_APP_EMAIL:              ${VUE_APP_EMAIL}
+      VUE_APP_PSWD:               ${VUE_APP_PSWD}
+      VUE_APP_MODE:               ${VUE_APP_MODE}
+      VUE_APP_LEVEL:              ${VUE_APP_LEVEL}
+      VUE_APP_PROTOCOL:           http
+      VUE_APP_REST_HOST:          www.gemapps.com
+      VUE_APP_REST_PORT:          3000
+    networks:
+      static-network:
+        ipv4_address: 172.20.0.4
+    ports:
+      - 3000:3000
+    volumes:
+      - $GEMAPPS_SOURCE_PATH/services:/usr/src/app
+      - $GEMAPPS_VOLUME_PATH:/usr/volumes
+
+networks:
+  static-network:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

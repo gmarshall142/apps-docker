@@ -2,12 +2,11 @@
 
 set -e
 
-echo "'$POSTGRES_OWNER_PSWD'"
-echo "'$POSTGRES_PSWD'"
+echo ===== GEMAPPS_POSTGRES_PSWD: =====
+echo "'$GEMAPPS_POSTGRES_PSWD'"
 
-psql -v ON_ERROR_STOP=1 -v appowner_pswd="'$POSTGRES_OWNER_PSWD'" -v appuser_pswd="'$POSTGRES_PSWD'" <<-EOSQL
-  create role appowner with login password :appowner_pswd;
-  create role appuser with login password :appuser_pswd;
+psql -v ON_ERROR_STOP=1 -v gmarshall_pswd="'$GEMAPPS_POSTGRES_PSWD'" <<-EOSQL
+  create role gmarshall with login password :gmarshall_pswd;
   CREATE DATABASE gmarshall;
   \c gmarshall
 EOSQL

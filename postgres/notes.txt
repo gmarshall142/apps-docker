@@ -2,10 +2,10 @@
 docker build -f Dockerfile-10.9 -t gemapps-pg:10.9 .
 
 # run script with password and env-file : existing volume
-./runWithVolume.sh docker ~/docker/config/env-vars.txt
+./runWithVolume.sh docker-apps ~/docker-apps/config/env-vars.txt
 
 # run script with password and env-file : newpsq volume
-./runNoVolume.sh docker ~/docker/config/env-vars.txt
+./runNoVolume.sh docker-apps ~/docker-apps/config/env-vars.txt
 
 # run psql connecting with on port 5433
 psql -h localhost -p 5433 -U postgres

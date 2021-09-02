@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker-compose -f dc-web.yml -f dc-app.yml $1
+docker-compose -f dc-appservices.yml -f dc-app.yml $1

@@ -2,7 +2,7 @@
 docker build -f Dockerfile -t gemapps-server .
 
 # run container
-docker container run --rm --name appserver --env-file=/Users/gmarshall/docker/config/env-vars.txt \
+docker container run --rm --name appserver --env-file=/Users/gmarshall/docker-apps/config/env-vars.txt \
 -d -p 3000:3000 \
 -v $GEMAPPS_SOURCE_PATH/services:/usr/src/app \
 gemapps-server

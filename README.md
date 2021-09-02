@@ -67,7 +67,16 @@ the container bash shell as the 'postgres' user:
 ``` javascript
 docker exec -it postgres /bin/bash
 su postgres /home/scripts/test-setup.sh
-```
+``` 
+Run psql in the postgres instance:
+``` javascript
+docker exec -it postgres /bin/bash
+su - postgres
+psql 
+\c gmarshall
+\dt
+``` 
+
 ### REST Server
 The REST service handles requests from the front-end and runs as a Node application.  This is built in the __server__
 directory and is defined under the __server__ service.
